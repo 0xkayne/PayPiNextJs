@@ -7,15 +7,38 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
+    const uaPi = /PiBrowser/i.test(navigator.userAgent);
     const w = window as unknown as { Pi?: { init: (cfg: { version: string; appName: string }) => void } };
-    if (w.Pi) {
-      try { w.Pi.init({ version: "2.0", appName: "PayPi" }); } catch {
-        // no-op
+
+    let cancelled = false;
+
+    const tryInit = () => {
+      if (w.Pi) {
+        try { w.Pi.init({ version: "2.0", appName: "PayPi" }); } catch {
+          // no-op
+        }
+        if (!cancelled) setPiReady(true);
+        return true;
       }
-      setPiReady(true);
+      return false;
+    };
+
+    if (!tryInit() && uaPi) {
+      const timer = setInterval(() => {
+        if (tryInit()) clearInterval(timer);
+      }, 200);
+      const killer = setTimeout(() => clearInterval(timer), 4000);
+
+      const saved = localStorage.getItem("pi_username");
+      if (saved) setUsername(saved);
+
+      return () => { cancelled = true; clearInterval(timer); clearTimeout(killer); };
     }
+
     const saved = localStorage.getItem("pi_username");
     if (saved) setUsername(saved);
+
+    return () => { cancelled = true; };
   }, []);
 
   const loginWithPi = async () => {
