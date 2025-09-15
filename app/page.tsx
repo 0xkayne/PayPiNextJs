@@ -1,103 +1,80 @@
-import Image from "next/image";
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [piReady, setPiReady] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const w = window as unknown as { Pi?: { init: (cfg: { version: string; appName: string }) => void } };
+    if (w.Pi) {
+      try { w.Pi.init({ version: "2.0", appName: "PayPi" }); } catch {
+        // no-op
+      }
+      setPiReady(true);
+    }
+    const saved = localStorage.getItem("pi_username");
+    if (saved) setUsername(saved);
+  }, []);
+
+  const loginWithPi = async () => {
+    const w = window as unknown as {
+      Pi?: {
+        init?: (cfg: { version: string; appName: string }) => void;
+        authenticate: (
+          scopes: string[],
+          onIncompletePaymentFound: (payment: unknown) => void
+        ) => Promise<{ accessToken: string; user?: { username?: string } }>;
+      };
+    };
+    if (!w.Pi) {
+      alert("请在 Pi Browser 中打开本应用");
+      return;
+    }
+    try {
+      const auth = await w.Pi.authenticate([
+        "username",
+        "wallet_address",
+        "payments",
+      ], () => { });
+      localStorage.setItem("pi_accessToken", auth.accessToken);
+      localStorage.setItem("pi_username", auth.user?.username || "");
+      setUsername(auth.user?.username || "");
+    } catch {
+      alert("登录失败，请重试");
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("pi_accessToken");
+    localStorage.removeItem("pi_username");
+    setUsername(null);
+  };
+
+  return (
+    <div className="min-h-screen p-8 sm:p-16">
+      <h1 className="text-3xl font-bold mb-6">PayPi</h1>
+      <div className="max-w-md border rounded-2xl p-6 mx-auto">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="text-sm opacity-80">
+            {piReady ? (username ? `已登录：${username}` : "未登录") : "非 Pi Browser（无法登录）"}
+          </div>
+          {username ? (
+            <button className="border rounded px-3 py-1 hover:bg-[#f2f2f2]" onClick={logout}>退出</button>
+          ) : (
+            <button className="border rounded px-3 py-1 hover:bg-[#f2f2f2]" onClick={loginWithPi} disabled={!piReady}>使用 Pi 登录</button>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="text-center text-xl font-semibold mb-6">PayPi</div>
+        <nav className="grid gap-4">
+          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/oneton">发起一对多转账</Link>
+          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/red-envelope">口令红包</Link>
+          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/merchant-code">注册商家收款码 / 查看我的收款码</Link>
+          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/scan-pay">扫码付款</Link>
+          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/me">查看我的信息</Link>
+        </nav>
+      </div>
     </div>
   );
 }
