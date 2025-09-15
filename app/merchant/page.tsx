@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 
-async function api(path: string, method: string, body?: any, auth?: string) {
+type JsonRecord = Record<string, unknown>;
+
+async function api<T extends JsonRecord>(path: string, method: string, body?: T, auth?: string) {
   const res = await fetch(path, {
     method,
     headers: {

@@ -1,10 +1,10 @@
 import { json, requireAuth } from "@/lib/http";
 
 export async function GET(req: Request) {
-  const { error, res, user } = requireAuth(req as any);
+  const { error, res, user } = requireAuth(req);
   if (error) return res;
-  const { passwordHash, ...safe } = user as any;
-  return json({ data: safe });
+  const { id, username, piAddress, createdAt } = user;
+  return json({ data: { id, username, piAddress, createdAt } });
 }
 
 

@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { Transaction } from "@/lib/types";
 
 export default function HistoryPage() {
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Transaction[]>([]);
   const token = typeof window !== "undefined" ? localStorage.getItem("paypi_token") || "" : "";
 
   useEffect(() => {

@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { User } from "@/lib/types";
 import Link from "next/link";
 
 export default function MePage() {
-  const [me, setMe] = useState<any>(null);
+  const [me, setMe] = useState<Pick<User, "id" | "username" | "piAddress" | "createdAt"> | null>(null);
   const token = typeof window !== "undefined" ? localStorage.getItem("paypi_token") || "" : "";
 
   useEffect(() => {
