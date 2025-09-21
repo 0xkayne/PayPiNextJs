@@ -9,81 +9,65 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const piBalance = "请在Pi钱包中查看";
 
-  // 检测 Pi Browser 环境的函数
-  const detectPiBrowser = () => {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as { opera?: string }).opera || "";
-    // 检查多种可能的Pi Browser标识符
-    return /PiBrowser/i.test(userAgent) ||
-      /Pi Browser/i.test(userAgent) ||
-      /pi-browser/i.test(userAgent);
+  // 能力检测：优先通过 ReactNativeWebView 特征判定，再回退到 SDK 能力检测
+  const detectPiEnv = async (timeoutMs = 2000): Promise<boolean> => {
+    const inRNWebView = typeof (window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView !== "undefined";
+    if (inRNWebView) return true;
+
+    const w = window as unknown as {
+      Pi?: {
+        nativeFeaturesList?: () => Promise<string[]>;
+        init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void;
+      };
+    };
+    if (!w.Pi || !w.Pi.nativeFeaturesList) return false;
+
+    const probe = w.Pi.nativeFeaturesList().then(() => true).catch(() => false);
+    const to = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs));
+    return Promise.race([probe, to]);
   };
 
   useEffect(() => {
-    // 首先检测是否在 Pi Browser 中
-    const isPiBrowserEnv = detectPiBrowser();
-    setIsPiBrowser(isPiBrowserEnv);
-
-    console.log("Pi Browser 环境检测:", isPiBrowserEnv);
-    console.log("User Agent:", navigator.userAgent);
-
-    if (!isPiBrowserEnv) {
-      // 如果不在 Pi Browser 中，直接返回，不进行后续初始化
-      console.log("不在 Pi Browser 环境中");
-      return;
-    }
-
-    // 在 Pi Browser 中，尝试初始化 Pi SDK
-    const w = window as unknown as { Pi?: { init: (cfg: { version: string; sandbox?: boolean; appName: string }) => void } };
     let cancelled = false;
-
-    const tryInit = () => {
-      if (w.Pi) {
-        try {
-          w.Pi.init({ version: "2.0", sandbox: true, appName: "PayPi" });
-          console.log("Pi SDK 初始化成功");
-        } catch (error) {
-          console.error("Pi SDK 初始化失败:", error);
-        }
-        if (!cancelled) setPiReady(true);
-        return true;
-      }
-      return false;
+    const w = window as unknown as {
+      Pi?: { init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void };
     };
 
-    // 尝试立即初始化
-    if (!tryInit()) {
-      console.log("Pi SDK 未就绪，等待加载...");
-      // 如果 Pi SDK 未就绪，等待加载
-      const timer = setInterval(() => {
-        if (tryInit()) {
-          clearInterval(timer);
-          console.log("Pi SDK 延迟加载成功");
+    // 始终先尝试初始化（不依赖是否 Pi Browser）
+    if (w.Pi?.init) {
+      try {
+        w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
+      } catch { }
+    }
+
+    (async () => {
+      const ok = await detectPiEnv(2000);
+      if (cancelled) return;
+      setIsPiBrowser(ok);
+
+      if (!ok) return;
+
+      // Pi 环境下，等待 SDK 就绪
+      const tryReady = () => {
+        if ((window as unknown as { Pi?: unknown }).Pi) {
+          setPiReady(true);
+          return true;
         }
-      }, 200);
+        return false;
+      };
+      if (!tryReady()) {
+        const timer = setInterval(() => {
+          if (tryReady()) clearInterval(timer);
+        }, 200);
+        setTimeout(() => clearInterval(timer), 4000);
+      }
 
-      const killer = setTimeout(() => {
-        clearInterval(timer);
-        console.warn("Pi SDK 加载超时");
-      }, 4000);
-
-      // 加载保存的用户信息
+      // 恢复本地缓存的登录展示信息
       const saved = localStorage.getItem("pi_username");
       const savedWallet = localStorage.getItem("pi_walletAddress");
       if (saved) setUsername(saved);
       if (savedWallet) setWalletAddress(savedWallet);
-
-      return () => {
-        cancelled = true;
-        clearInterval(timer);
-        clearTimeout(killer);
-      };
-    }
-
-    // 如果立即初始化成功，加载保存的用户信息
-    const saved = localStorage.getItem("pi_username");
-    const savedWallet = localStorage.getItem("pi_walletAddress");
-    if (saved) setUsername(saved);
-    if (savedWallet) setWalletAddress(savedWallet);
+    })();
 
     return () => { cancelled = true; };
   }, []);
