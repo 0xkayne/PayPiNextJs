@@ -35,8 +35,8 @@ export default function Home() {
     // 始终先尝试初始化（不依赖是否 Pi Browser）
     if (w.Pi?.init) {
       try {
-        //w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
-        w.Pi.init({ version: "2.0", sandbox: true, appName: "PayPi" });
+        w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
+        //w.Pi.init({ version: "2.0", sandbox: true, appName: "PayPi" });
       } catch { }
     }
 
