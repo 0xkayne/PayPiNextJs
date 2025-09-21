@@ -35,7 +35,8 @@ export default function Home() {
     // 始终先尝试初始化（不依赖是否 Pi Browser）
     if (w.Pi?.init) {
       try {
-        w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
+        //w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
+        w.Pi.init({ version: "2.0", sandbox: true, appName: "PayPi" });
       } catch { }
     }
 
@@ -119,6 +120,8 @@ export default function Home() {
 
       localStorage.setItem("pi_accessToken", auth.accessToken);
       localStorage.setItem("pi_username", auth.user?.username || "");
+      // 记录已授予 payments 权限，避免后续重复权限授权弹窗
+      localStorage.setItem("pi_has_payments", "1");
       setUsername(auth.user?.username || "");
 
       // 尝试获取钱包地址 - 仅保存到本地，不在首页展示
@@ -135,6 +138,7 @@ export default function Home() {
     localStorage.removeItem("pi_accessToken");
     localStorage.removeItem("pi_username");
     localStorage.removeItem("pi_walletAddress");
+    localStorage.removeItem("pi_has_payments");
     setUsername(null);
   };
 
