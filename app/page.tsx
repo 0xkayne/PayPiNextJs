@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -154,19 +155,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen p-8 sm:p-16">
-      <h1 className="text-3xl font-bold mb-6">PayPi</h1>
-      <div className="max-w-md border rounded-2xl p-6 mx-auto">
+    <div className="min-h-screen bg-[#090b0c] text-white">
+      <div className="mx-auto max-w-md p-8 sm:p-10">
+        {/* 顶部状态与登录区 */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-80">
-              {getEnvironmentStatus()}
-            </div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs opacity-80">{getEnvironmentStatus()}</div>
             {isPiBrowser && username ? (
-              <button className="border rounded px-3 py-1 hover:bg-[#f2f2f2]" onClick={logout}>退出</button>
+              <button className="border border-white/20 rounded px-3 py-1 hover:bg-white/10" onClick={logout}>退出</button>
             ) : (
               <button
-                className="border rounded px-3 py-1 hover:bg-[#f2f2f2] disabled:opacity-50"
+                className="border border-white/20 rounded px-3 py-1 hover:bg-white/10 disabled:opacity-50"
                 onClick={loginWithPi}
                 disabled={!isPiBrowser || !piReady}
               >
@@ -177,31 +176,97 @@ export default function Home() {
 
           {/* 非 Pi Browser 环境的提示 */}
           {!isPiBrowser && (
-            <div className="text-xs p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded mb-2">
-              <p className="text-yellow-800 dark:text-yellow-200">
-                ⚠️ 检测到您不在 Pi Browser 环境中。请在 Pi Browser 中打开本应用以使用完整功能。
-              </p>
+            <div className="text-xs p-2 mt-2 bg-yellow-900/20 border border-yellow-800 rounded">
+              <p className="text-yellow-200">⚠️ 检测到您不在 Pi Browser 环境中。请在 Pi Browser 中打开本应用以使用完整功能。</p>
             </div>
           )}
 
           {isPiBrowser && !piReady && (
-            <div className="text-xs p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded mb-2">
-              <p className="text-blue-800 dark:text-blue-200">
-                🔄 Pi SDK 正在加载中，请稍候...
-              </p>
+            <div className="text-xs p-2 mt-2 bg-blue-900/20 border border-blue-800 rounded">
+              <p className="text-blue-200">🔄 Pi SDK 正在加载中，请稍候...</p>
             </div>
           )}
-
-          {/* 首页仅展示用户名；钱包地址与余额请移步“我的信息”页 */}
         </div>
-        <div className="text-center text-xl font-semibold mb-6">PayPi</div>
-        <nav className="grid gap-4">
-          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/oneton">发起一对多转账</Link>
-          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/red-envelope">口令红包</Link>
-          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/merchant-code">注册商家收款码 / 查看我的收款码</Link>
-          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/scan-pay">扫码付款</Link>
-          <Link className="border rounded-lg p-4 text-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]" href="/me">查看我的信息</Link>
-        </nav>
+
+        {/* Logo 图片（替换文字） */}
+        <div className="mt-6 mb-10 flex items-center justify-center">
+          <Image
+            src="/PayPi.svg"
+            width={264}
+            height={110}
+            alt="PayPi logo"
+            priority
+            className="mx-auto select-none"
+          />
+        </div>
+
+        {/* 主功能卡片（与 Figma 对齐） */}
+        <div className="grid gap-5">
+          <Link href="/oneton" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 7h11" />
+                <path d="M10 11h11" />
+                <path d="M4 15h11" />
+                <path d="M14 5l3 2-3 2" />
+                <path d="M18 13l3 2-3 2" />
+              </svg>
+            </span>
+            <span className="font-semibold text-lg">One-to-many Transfer</span>
+          </Link>
+
+          <Link href="/red-envelope" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <path d="M4 8h16" />
+                <circle cx="12" cy="13" r="2.5" />
+              </svg>
+            </span>
+            <span className="font-semibold text-lg">Password Gifts</span>
+          </Link>
+        </div>
+
+        {/* 其他功能入口，保持功能不变但样式与主卡片一致 */}
+        <div className="mt-8 grid gap-5">
+          <Link href="/merchant-code" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {/* 店铺/二维码图标 */}
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 7h16" />
+                <path d="M5 7v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
+                <rect x="7" y="10" width="4" height="4" rx="1" />
+                <path d="M15 10h2M17 12h-2M15 14h2" />
+              </svg>
+            </span>
+            <span className="font-semibold text-lg">注册商家收款码 / 查看我的收款码</span>
+          </Link>
+
+          <Link href="/scan-pay" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {/* 扫码图标 */}
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                <rect x="8" y="8" width="8" height="8" rx="1" />
+              </svg>
+            </span>
+            <span className="font-semibold text-lg">扫码付款</span>
+          </Link>
+
+          <Link href="/me" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {/* 用户头像图标 */}
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="7.5" r="3" />
+                <path d="M5 20a7 7 0 0 1 14 0" />
+              </svg>
+            </span>
+            <span className="font-semibold text-lg">查看我的信息</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
