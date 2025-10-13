@@ -194,7 +194,7 @@ export default function OneToNPage() {
                     <span className="hidden sm:inline-flex h-5 w-5 rounded-full bg-white/20 mr-1" />
                     <input
                       className={`flex-1 min-w-0 max-w-full rounded-lg px-3 py-2 bg-white/10 placeholder-white/40 outline-none border ${addrInvalid ? "border-red-500" : "border-white/15"}`}
-                      placeholder="接收地址"
+                      placeholder="Receiver Address"
                       value={r.address}
                       onChange={(e) => updateAddr(r.id, e.target.value)}
                       onBlur={() => {
@@ -207,7 +207,7 @@ export default function OneToNPage() {
                     )}
                     <input
                       className={`rounded-lg w-full sm:w-28 max-w-[8rem] px-3 py-2 bg-white/10 placeholder-white/40 outline-none border text-right ${amtInvalid ? "border-red-500" : "border-white/15"}`}
-                      placeholder="金额"
+                      placeholder="Amount"
                       value={r.amount}
                       onChange={(e) => updateAmt(r.id, e.target.value)}
                     />
@@ -216,7 +216,7 @@ export default function OneToNPage() {
                       onClick={() => removeRow(r.id)}
                       disabled={rows.length <= 1}
                     >
-                      删除
+                      Delete
                     </button>
                   </div>
                   {/* 桌面/大屏在输入行下方提示 */}
@@ -272,7 +272,7 @@ export default function OneToNPage() {
 
           {msg && <div className="text-sm opacity-80">{msg}</div>}
           <Link className="text-center rounded-full bg-gradient-to-r from-[#a625fc] to-[#f89318] p-3 font-medium" href="/history">Transfer History</Link>
-          <Link className="text-center rounded-lg border border-white/15 p-2 hover:bg-white/5" href="/">返回主界面</Link>
+          <Link className="text-center rounded-lg border border-white/15 p-2 hover:bg-white/5" href="/">Back to Home</Link>
         </div>
       </div>
     </div>

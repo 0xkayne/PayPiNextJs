@@ -61,7 +61,7 @@ export default function ScanPayPage() {
           }
         }
       } catch {
-        if (!cancelled) setRateError("汇率获取失败，已使用本地/默认汇率");
+        if (!cancelled) setRateError("Exchange rate retrieval failed, using local/default rate");
       } finally {
         if (!cancelled) setLoadingRate(false);
       }
@@ -122,8 +122,8 @@ export default function ScanPayPage() {
 
   async function sendPayment() {
     setMsg("");
-    if (!canContinue) { setMsg("地址不合法"); return; }
-    if (!canPayAmount) { setMsg("金额无效"); return; }
+    if (!canContinue) { setMsg("Invalid address"); return; }
+    if (!canPayAmount) { setMsg("Invalid amount"); return; }
 
     const w = window as unknown as {
       Pi?: {
@@ -138,7 +138,7 @@ export default function ScanPayPage() {
         ) => void;
       };
     };
-    if (!w.Pi) { setMsg("请在 Pi Browser 中使用此功能"); return; }
+    if (!w.Pi) { setMsg("Please use this feature in Pi Browser"); return; }
 
     await ensureAuthenticated();
 
@@ -162,7 +162,7 @@ export default function ScanPayPage() {
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify({ paymentId }),
                 });
-                if (!r.ok) throw new Error("服务器审批失败");
+                if (!r.ok) throw new Error("Server approval failed");
               } catch (e) {
                 reject(e instanceof Error ? e : new Error("服务器审批失败"));
               }
@@ -174,20 +174,20 @@ export default function ScanPayPage() {
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify({ paymentId, txid }),
                 });
-                if (!r.ok) throw new Error("服务器完成失败");
+                if (!r.ok) throw new Error("Server completion failed");
                 resolve();
               } catch (e) {
-                reject(e instanceof Error ? e : new Error("服务器完成失败"));
+                reject(e instanceof Error ? e : new Error("Server completion failed"));
               }
             },
-            onCancel: () => reject(new Error("用户取消支付")),
+            onCancel: () => reject(new Error("User cancelled payment")),
             onError: (error: Error) => reject(error),
           }
         );
       });
-      setMsg("支付已完成");
+      setMsg("Payment completed");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "支付失败，请重试");
+      setMsg(e instanceof Error ? e.message : "Payment failed, please try again");
     } finally {
       setSubmitting(false);
     }
@@ -215,7 +215,7 @@ export default function ScanPayPage() {
         // Prefer BarcodeDetector
         const AnyWin = window as unknown as { BarcodeDetector?: new (opts?: { formats?: string[] }) => { detect: (src: CanvasImageSource) => Promise<Array<{ rawValue?: string; rawValueAsString?: string }>> } };
         if (!AnyWin.BarcodeDetector) {
-          setScanError("当前浏览器不支持扫码，请尝试 Pi Browser 或更新浏览器");
+          setScanError("Current browser does not support scanning, please try Pi Browser or update browser");
           return;
         }
 
@@ -236,7 +236,7 @@ export default function ScanPayPage() {
         };
         tick();
       } catch {
-        setScanError("无法访问摄像头，请检查权限设置");
+        setScanError("Cannot access camera, please check permission settings");
       }
     })();
 
@@ -266,13 +266,13 @@ export default function ScanPayPage() {
       });
       const json = await res.json().catch(() => null) as { data?: { piAddress?: string; startPi?: number }; error?: string } | null;
       if (!res.ok || !json || json.error) {
-        setScanError(json?.error || "二维码解析失败");
+        setScanError(json?.error || "QR code parsing failed");
         return;
       }
       const addr = json?.data?.piAddress;
       if (addr) setReceivingAddress(addr);
     } catch {
-      setScanError("网络错误，二维码解析失败");
+      setScanError("Network error, QR code parsing failed");
     }
   }
 
@@ -321,7 +321,7 @@ export default function ScanPayPage() {
             <span className="text-xl font-medium text-[#a625fc]">{piAmount.toFixed(4)} Pi</span>
             <span className="ml-2 text-xs text-[#7d7f88]">{
               loadingRate
-                ? "(汇率加载中...)"
+                ? "(Exchange rate loading...)"
                 : rateError
                   ? `(${rateError})`
                   : `(1 USD ≈ ${(usdPerPi && usdPerPi > 0 ? (1 / usdPerPi) : piPerUsd).toFixed(4)} Pi)`
@@ -349,7 +349,7 @@ export default function ScanPayPage() {
 
           </div>
           {!yourValid && (
-            <div className="mt-1 text-xs text-red-400">请输入合法 Pi 地址（56 位大写字母或数字）。</div>
+            <div className="mt-1 text-xs text-red-400">Please enter a valid Pi address.</div>
           )}
 
           {/* 分隔符 */}
@@ -371,7 +371,7 @@ export default function ScanPayPage() {
               className="w-8 h-8 flex items-center justify-center"
               onClick={() => { setScanError(null); setScanOpen(true); }}
               aria-label="Scan QR"
-              title="扫描二维码"
+              title="Scan QR"
             >
               <svg className="w-6 h-6 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2" />
@@ -383,7 +383,7 @@ export default function ScanPayPage() {
             </button>
           </div>
           {!receivingValid && (
-            <div className="mt-1 text-xs text-red-400">请输入合法 Pi 地址（56 位大写字母或数字）。</div>
+            <div className="mt-1 text-xs text-red-400">Please enter a valid Pi address.</div>
           )}
         </div>
 
@@ -410,7 +410,7 @@ export default function ScanPayPage() {
           href="/"
           className="mt-8 block text-center text-[#7d7f88] hover:text-white transition-colors"
         >
-          返回主界面
+          Back to Home
         </Link>
       </div>
       {/* 扫码弹层 */}
@@ -418,11 +418,11 @@ export default function ScanPayPage() {
         <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4">
           <div className="w-full max-w-md">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-white/70">对准二维码扫描</div>
+              <div className="text-sm text-white/70">Align the QR code to scan</div>
               <button
                 className="text-sm px-3 py-1 rounded border border-white/30 text-white/80 hover:bg-white/10"
                 onClick={stopScan}
-              >关闭</button>
+              >Close</button>
             </div>
             <div className="relative rounded-lg overflow-hidden border border-white/20">
               <video ref={videoRef} autoPlay playsInline muted className="block w-full aspect-[3/4] object-cover bg-black" />

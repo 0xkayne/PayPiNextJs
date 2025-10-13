@@ -4,13 +4,20 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 export default function MerchantCodePage() {
+  const [activeTab, setActiveTab] = useState<"merchant" | "payment">("merchant");
   const [stage, setStage] = useState<"checking" | "init" | "editing" | "generated" | "existing">("checking");
   const [piAddress, setPiAddress] = useState("");
   const [startPi, setStartPi] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [qrUrl, setQrUrl] = useState<string>("");
-  type PayPayload = { type: "paypi"; version: 1; piAddress: string; startPi: number };
-  const [payload, setPayload] = useState<PayPayload | null>(null);
+  const [showAddressInput, setShowAddressInput] = useState(false);
+  const [showAmountInput, setShowAmountInput] = useState(false);
+  const [addressEntered, setAddressEntered] = useState(false);
+  const [amountEntered, setAmountEntered] = useState(false);
+  const [generateSuccess, setGenerateSuccess] = useState(false);
+  const [existingMerchantAddress, setExistingMerchantAddress] = useState("");
+  const [dividendPool, setDividendPool] = useState(0);
+  const [copySuccess, setCopySuccess] = useState<"address" | "dividend" | null>(null);
 
   const PI_ADDR_RE = useMemo(() => /^[A-Z0-9]{56}$/, []);
   const canGenerate = useMemo(() => {
@@ -46,7 +53,11 @@ export default function MerchantCodePage() {
         const mj = await me.json();
         if (mj?.data) {
           setQrUrl(mj.data.qrPngDataUrl);
-          setPayload(mj.data.payload);
+          const addr = mj.data.payload?.piAddress || "";
+          setExistingMerchantAddress(addr);
+          // 尝试获取分红池信息（若后端返回）
+          const pool = mj.data.dividendPool ?? 0;
+          setDividendPool(pool);
           setStage("existing");
         } else {
           setStage("init");
@@ -58,14 +69,49 @@ export default function MerchantCodePage() {
     bootstrap();
   }, []);
 
-  const onEnter = () => {
+
+  const handleAddressEnter = () => {
     setError("");
-    setStage("editing");
+    const trimmed = piAddress.trim();
+    if (!PI_ADDR_RE.test(trimmed)) {
+      setPiAddress("");
+      setAddressEntered(false);
+      setShowAddressInput(false);
+      setError("Pi 地址格式错误：需为 56 位大写字母或数字");
+      return;
+    }
+    setAddressEntered(true);
+    setShowAddressInput(false);
+  };
+
+  const handleAmountEnter = () => {
+    setError("");
+    const amt = Number(startPi.trim());
+    if (!Number.isFinite(amt) || amt < 0) {
+      setStartPi("");
+      setAmountEntered(false);
+      setShowAmountInput(false);
+      setError("起始金额格式错误：需为非负数");
+      return;
+    }
+    setAmountEntered(true);
+    setShowAmountInput(false);
+  };
+
+  const copyToClipboard = async (text: string, type: "address" | "dividend") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(type);
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch {
+      setError("复制失败，请手动复制");
+    }
   };
 
   const onGenerate = async () => {
     try {
       setError("");
+      setGenerateSuccess(false);
       const sessionToken = localStorage.getItem("sessionToken") || "";
       if (!sessionToken) { setError("未登录或会话失效"); return; }
       const res = await fetch("/api/v1/merchant-code/generate", {
@@ -76,134 +122,207 @@ export default function MerchantCodePage() {
       const j = await res.json();
       if (j?.error) { setError(j.error); return; }
       setQrUrl(j.data.qrPngDataUrl);
-      setPayload(j.data.payload);
+      setExistingMerchantAddress(piAddress);
       setStage("generated");
+      setGenerateSuccess(true);
     } catch {
       setError("生成失败，请重试");
     }
   };
 
   return (
-    <div className="min-h-screen text-white" style={{
-      background: "radial-gradient(1200px 600px at 50% -200px, rgba(78, 82, 255, 0.18), transparent 60%), #0a0c0f"
-    }}>
-      <div className="max-w-md mx-auto px-6 py-9">
-        <div className="mb-6">
-          <h1 className="text-[28px] leading-8 font-semibold tracking-tight">商家收款码</h1>
-          <p className="text-[13px] opacity-70 mt-1">一键生成并保存与您的 Pi 地址绑定的收款二维码</p>
+    <div className="min-h-screen bg-[#090b0c] text-white">
+      <div className="mx-auto max-w-md px-6 py-8">
+        {/* 顶部选项卡 */}
+        <div className="flex items-center justify-center gap-7 mb-14">
+          <button
+            onClick={() => setActiveTab("merchant")}
+            className={`text-xl font-medium transition-colors relative ${activeTab === "merchant" ? "text-[#a625fc]" : "text-white/60"}`}
+          >
+            Merchant
+            {activeTab === "merchant" && (
+              <div className="absolute -bottom-1 left-0 right-0 h-[1px] bg-[#a625fc]" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("payment")}
+            className={`text-xl font-medium transition-colors ${activeTab === "payment" ? "text-white" : "text-white/60"}`}
+          >
+            Payment
+          </button>
         </div>
 
-        {/* 步骤指示 */}
-        <div className="flex items-center gap-3 mb-6 select-none">
-          {(["初始", "输入", "完成"] as const).map((label, i) => {
-            const active =
-              (stage === "init" && i === 0) ||
-              (stage === "editing" && i === 1) ||
-              ((stage === "generated" || stage === "existing") && i === 2);
-            return (
-              <div key={label} className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium ${active ? "bg-white text-black" : "bg-white/10 text-white/70"}`}>{i + 1}</div>
-                <span className={`text-[12px] ${active ? "opacity-100" : "opacity-60"}`}>{label}</span>
-                {i < 2 && <div className="w-8 h-[1px] bg-white/15 mx-1" />}
+        {/* 二维码区域 */}
+        <div className="mb-12 flex justify-center">
+          {(stage === "generated" || stage === "existing") && qrUrl ? (
+            <div className="w-64 h-64 rounded-lg overflow-hidden border-2 border-white/20 bg-white p-2">
+              <Image src={qrUrl} alt="Merchant QR Code" width={256} height={256} className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-64 h-64 rounded-lg border-2 border-dashed border-white/20 bg-black/20 flex items-center justify-center">
+              <div className="text-center text-sm text-white/50">
+                {stage === "checking" ? "加载中..." : "二维码将在生成后显示"}
               </div>
-            );
-          })}
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_10px_40px_rgba(0,0,0,0.4)] grid gap-4 backdrop-blur-[2px]">
-          {stage === "checking" && (
-            <div className="text-[13px] opacity-80">加载中...</div>
-          )}
-
-          {stage === "init" && (
-            <div className="grid gap-3">
-              <div className="text-sm opacity-80">未检测到已注册的商家收款码。点击下方 Enter 以开始。</div>
-              <button
-                className="h-11 rounded-xl bg-white text-black font-medium hover:bg-white/90 active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-white/40"
-                onClick={onEnter}
-              >
-                Enter
-              </button>
-              <div className="text-[11px] opacity-60">提示：请先在首页通过 Pi SDK 登录，系统会自动为您创建会话。</div>
             </div>
           )}
+        </div>
 
-          {stage === "editing" && (
-            <div className="grid gap-4">
-              <div className="grid gap-1">
-                <label className="text-sm opacity-80">Pi Address</label>
+        {/* 输入区域 */}
+        <div className="flex flex-col gap-12 mb-12">
+          {/* Your Pi Address */}
+          <div className="relative bg-[#090b0c] border border-[#35363c] rounded-lg p-5 flex items-center justify-between">
+            {stage === "existing" && existingMerchantAddress ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-[#8d8f99]">Your Pi Address</div>
+                  <div className="text-base font-medium text-white">
+                    {existingMerchantAddress.slice(0, 7)}...{existingMerchantAddress.slice(-8)}
+                  </div>
+                </div>
+                <button
+                  className="h-12 px-6 bg-gradient-to-r from-[#a625fc] to-[#f89318] rounded-full text-white text-base font-semibold hover:opacity-90 transition-opacity"
+                  onClick={() => copyToClipboard(existingMerchantAddress, "address")}
+                >
+                  {copySuccess === "address" ? "Copied!" : "Copy"}
+                </button>
+              </>
+            ) : showAddressInput ? (
+              <>
                 <input
-                  className="h-11 rounded-xl bg-white/5 border border-white/12 px-3 outline-none ring-0 focus:border-white/40 placeholder-white/30 tracking-wide"
-                  placeholder="请输入 56 位大写字母或数字"
+                  type="text"
                   value={piAddress}
                   onChange={(e) => setPiAddress(e.target.value.trim())}
-                  aria-label="Pi Address"
+                  placeholder="输入 Pi 地址"
+                  className="flex-1 bg-transparent text-xl font-medium text-white placeholder:text-[#7d7f88] outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddressEnter();
+                    }
+                  }}
+                  onBlur={() => setShowAddressInput(false)}
+                  autoFocus
                 />
-                <div className="text-[11px] opacity-60">格式：长度 56，字符集 A-Z / 0-9</div>
-              </div>
-
-              <div className="grid gap-1">
-                <label className="text-sm opacity-80">Start money</label>
-                <input
-                  className="h-11 rounded-xl bg-white/5 border border-white/12 px-3 outline-none ring-0 focus:border-white/40 placeholder-white/30"
-                  placeholder="请输入起始金额，例如 12.34"
-                  inputMode="decimal"
-                  value={startPi}
-                  onChange={(e) => setStartPi(e.target.value)}
-                  aria-label="Start money"
-                />
-                <div className="text-[11px] opacity-60">必须为非负数，最多保留 6 位小数</div>
-              </div>
-
-              <button
-                className={`h-11 rounded-xl font-medium transition focus:outline-none ${canGenerate ? "bg-white text-black hover:bg-white/90 active:scale-[0.99] focus:ring-2 focus:ring-white/40" : "bg-white/10 text-white/50 cursor-not-allowed"}`}
-                onClick={onGenerate}
-                disabled={!canGenerate}
-              >
-                Generate
-              </button>
-
-              <div className="text-[11px] opacity-60">生成后系统会将二维码与绑定信息保存到数据库。</div>
-            </div>
-          )}
-
-          {(stage === "generated" || stage === "existing") && (
-            <div className="grid gap-4">
-              <div className="text-sm opacity-80">
-                {stage === "existing" ? "已为您找到已注册的收款码" : "收款码生成成功"}
-              </div>
-              <div className="rounded-xl bg-black/40 border border-white/12 p-3 flex items-center justify-center">
-                {qrUrl ? (
-                  <div className="w-full">
-                    <div className="w-full aspect-square overflow-hidden rounded-lg relative">
-                      <Image src={qrUrl} alt="merchant paycode" fill sizes="(max-width: 768px) 100vw, 400px" className="object-contain" />
+              </>
+            ) : (
+              <>
+                {addressEntered && piAddress ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-[#8d8f99]">Your Pi Address</div>
+                    <div className="text-base font-medium text-white">
+                      {piAddress.slice(0, 7)}...{piAddress.slice(-8)}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm opacity-80">二维码加载中...</div>
+                  <div className="text-xl font-medium text-white">Your Pi Address</div>
                 )}
-              </div>
-              {payload && (
-                <div className="grid gap-1 text-sm">
-                  <div className="opacity-70">绑定信息</div>
-                  <div className="rounded-xl bg-white/5 border border-white/12 p-3 text-[11px] leading-[1.2] break-all">
-                    {JSON.stringify(payload)}
-                  </div>
+                <button
+                  className={`h-12 px-6 rounded-full text-white text-base font-semibold hover:opacity-90 transition-opacity ${addressEntered ? "bg-[#27ae75]" : "bg-gradient-to-r from-[#a625fc] to-[#f89318]"
+                    }`}
+                  onClick={() => {
+                    setAddressEntered(false);
+                    setShowAddressInput(true);
+                  }}
+                >
+                  {addressEntered ? "Entered" : "Enter"}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Starting Amount / Current Accumulated Dividends */}
+          <div className="relative bg-[#090b0c] border border-[#35363c] rounded-lg p-5 flex items-center justify-between">
+            {stage === "existing" ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-[#8d8f99]">Current Accumulated Dividends</div>
+                  <div className="text-base font-medium text-white">¥{dividendPool.toFixed(2)}</div>
                 </div>
-              )}
-              <div className="text-[11px] opacity-60">请妥善保存二维码，用户扫码即可向该地址发起支付。</div>
-            </div>
+                <button
+                  className="h-12 px-6 bg-gradient-to-r from-[#a625fc] to-[#f89318] rounded-full text-white text-base font-semibold hover:opacity-90 transition-opacity"
+                  onClick={() => copyToClipboard(String(dividendPool), "dividend")}
+                >
+                  {copySuccess === "dividend" ? "Copied!" : "Copy"}
+                </button>
+              </>
+            ) : showAmountInput ? (
+              <>
+                <input
+                  type="text"
+                  value={startPi}
+                  onChange={(e) => setStartPi(e.target.value)}
+                  placeholder="输入起始金额"
+                  className="flex-1 bg-transparent text-xl font-medium text-white placeholder:text-[#7d7f88] outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAmountEnter();
+                    }
+                  }}
+                  onBlur={() => setShowAmountInput(false)}
+                  autoFocus
+                />
+              </>
+            ) : (
+              <>
+                {amountEntered && startPi ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-[#8d8f99]">Starting Amount</div>
+                    <div className="text-base font-medium text-white">${startPi}</div>
+                  </div>
+                ) : (
+                  <div className="text-xl font-medium text-white">Starting Amount</div>
+                )}
+                <button
+                  className={`h-12 px-6 rounded-full text-white text-base font-semibold hover:opacity-90 transition-opacity ${amountEntered ? "bg-[#27ae75]" : "bg-gradient-to-r from-[#a625fc] to-[#f89318]"
+                    }`}
+                  onClick={() => {
+                    setAmountEntered(false);
+                    setShowAmountInput(true);
+                  }}
+                >
+                  {amountEntered ? "Entered" : "Enter"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Generate 按钮 / Distribute Dividends 按钮 */}
+        <div className="mb-6">
+          {stage === "existing" ? (
+            <button
+              className="w-full h-16 bg-[#32363e] rounded-full text-white text-xl font-medium hover:bg-[#3a3f49] transition-colors"
+              onClick={() => {
+                // TODO: 实现分红分配逻辑
+                alert("分红分配功能开发中");
+              }}
+            >
+              Distribute Dividends
+            </button>
+          ) : (
+            <button
+              disabled={!canGenerate}
+              onClick={onGenerate}
+              className={`w-full h-16 rounded-full text-white text-xl font-medium transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${addressEntered && amountEntered
+                ? "bg-gradient-to-r from-[#a625fc] to-[#f89318] hover:opacity-90"
+                : "bg-[#32363e] hover:bg-[#3a3f49]"
+                }`}
+            >
+              {generateSuccess ? "Success!" : "Generate"}
+            </button>
           )}
-
-          {error && <div className="text-red-400 text-[13px]">{error}</div>}
-
-          <Link className="text-center h-10 rounded-xl bg-white/6 border border-white/12 hover:bg-white/10 transition flex items-center justify-center" href="/">返回主界面</Link>
         </div>
 
-        {/* 版权/提示 */}
-        <div className="mt-5 text-center text-[11px] opacity-50">
-          设计参考：未注册态、输入态、生成态与已注册态（详见 Figma）
-        </div>
+        {error && <div className="text-red-400 text-sm mb-4">{error}</div>}
+
+        {/* 返回主页链接 */}
+        <Link
+          href="/"
+          className="mt-8 block text-center text-[#7d7f88] hover:text-white transition-colors"
+        >
+          Back to Home
+        </Link>
       </div>
     </div>
   );

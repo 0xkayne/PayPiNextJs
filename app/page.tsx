@@ -146,12 +146,12 @@ export default function Home() {
   // 获取环境状态显示文本
   const getEnvironmentStatus = () => {
     if (!isPiBrowser) {
-      return "请在 Pi Browser 中打开";
+      return "Please open in Pi Browser";
     }
     if (piReady) {
-      return username ? `已登录：${username}` : "未登录";
+      return username ? `Logged in: ${username}` : "Not logged in";
     }
-    return "Pi SDK 加载中...";
+    return "Pi SDK loading...";
   };
 
   return (
@@ -162,14 +162,14 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="text-xs opacity-80">{getEnvironmentStatus()}</div>
             {isPiBrowser && username ? (
-              <button className="border border-white/20 rounded px-3 py-1 hover:bg-white/10" onClick={logout}>退出</button>
+              <button className="border border-white/20 rounded px-3 py-1 hover:bg-white/10" onClick={logout}>Logout</button>
             ) : (
               <button
                 className="border border-white/20 rounded px-3 py-1 hover:bg-white/10 disabled:opacity-50"
                 onClick={loginWithPi}
                 disabled={!isPiBrowser || !piReady}
               >
-                使用 Pi 登录
+                Login with Pi
               </button>
             )}
           </div>
@@ -177,13 +177,13 @@ export default function Home() {
           {/* 非 Pi Browser 环境的提示 */}
           {!isPiBrowser && (
             <div className="text-xs p-2 mt-2 bg-yellow-900/20 border border-yellow-800 rounded">
-              <p className="text-yellow-200">⚠️ 检测到您不在 Pi Browser 环境中。请在 Pi Browser 中打开本应用以使用完整功能。</p>
+              <p className="text-yellow-200">⚠️ Detected you are not in Pi Browser environment. Please open this app in Pi Browser to use full features.</p>
             </div>
           )}
 
           {isPiBrowser && !piReady && (
             <div className="text-xs p-2 mt-2 bg-blue-900/20 border border-blue-800 rounded">
-              <p className="text-blue-200">🔄 Pi SDK 正在加载中，请稍候...</p>
+              <p className="text-blue-200">🔄 Pi SDK is loading, please wait...</p>
             </div>
           )}
         </div>
@@ -239,7 +239,7 @@ export default function Home() {
                 <path d="M15 10h2M17 12h-2M15 14h2" />
               </svg>
             </span>
-            <span className="font-semibold text-lg">注册商家收款码 / 查看我的收款码</span>
+            <span className="font-semibold text-lg">Register merchant paycode / View my paycode</span>
           </Link>
 
           <Link href="/scan-pay" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
@@ -253,7 +253,7 @@ export default function Home() {
                 <rect x="8" y="8" width="8" height="8" rx="1" />
               </svg>
             </span>
-            <span className="font-semibold text-lg">扫码付款</span>
+            <span className="font-semibold text-lg">Scan to pay</span>
           </Link>
 
           <Link href="/me" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
@@ -264,7 +264,7 @@ export default function Home() {
                 <path d="M5 20a7 7 0 0 1 14 0" />
               </svg>
             </span>
-            <span className="font-semibold text-lg">查看我的信息</span>
+            <span className="font-semibold text-lg">View my information</span>
           </Link>
         </div>
       </div>
