@@ -5,7 +5,7 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string | string[] | undefined }> }
 ) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   if (auth.error) return auth.res;
   const { id } = await ctx.params;
   const merchantId = Array.isArray(id) ? id[0] : id;

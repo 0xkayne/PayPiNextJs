@@ -3,7 +3,7 @@ import { json, requireAuth } from "@/lib/http";
 import { registerMerchant } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req as unknown as Request);
   if (auth.error) return auth.res;
   const body = await req.json().catch(() => ({}));
   const { name, receiveAddress, feePercent = 0, dividendPercent = 0 } = body ?? {};

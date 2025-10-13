@@ -3,7 +3,7 @@ import { createTransaction } from "@/lib/db";
 import { json, requireAuth } from "@/lib/http";
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req as unknown as Request);
   if (auth.error) return auth.res;
   const body = await req.json().catch(() => ({}));
   const { toAddress, amountPi, merchantId } = body ?? {};

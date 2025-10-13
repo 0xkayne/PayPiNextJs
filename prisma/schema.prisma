@@ -1,0 +1,42 @@
+// Prisma schema for PayPi
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PiUser {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  walletAddress String?
+  createdAt     DateTime  @default(now())
+
+  sessions      Session[]
+  paycode       MerchantPaycode?
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  user       PiUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+model MerchantPaycode {
+  id           String   @id @default(uuid())
+  ownerUserId  String   @unique
+  owner        PiUser   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  piAddress    String   @db.VarChar(56)
+  startPi      Decimal  @db.Decimal(18, 6)
+  payloadJson  String
+  qrPngDataUrl String
+  createdAt    DateTime @default(now())
+}
+
+
