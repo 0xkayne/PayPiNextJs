@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 export default function MerchantCodePage() {
-  const [activeTab, setActiveTab] = useState<"merchant" | "payment">("merchant");
   const [stage, setStage] = useState<"checking" | "init" | "editing" | "generated" | "existing">("checking");
   const [piAddress, setPiAddress] = useState("");
   const [startPi, setStartPi] = useState<string>("");
@@ -134,22 +133,27 @@ export default function MerchantCodePage() {
     <div className="min-h-screen bg-[#090b0c] text-white">
       <div className="mx-auto max-w-md px-6 py-8">
         {/* 顶部选项卡 */}
-        <div className="flex items-center justify-center gap-7 mb-14">
-          <button
-            onClick={() => setActiveTab("merchant")}
-            className={`text-xl font-medium transition-colors relative ${activeTab === "merchant" ? "text-[#a625fc]" : "text-white/60"}`}
-          >
-            Merchant
-            {activeTab === "merchant" && (
+
+        <div className="relative flex items-center justify-center mb-14">
+          <Link href="/" className="absolute left-0 inline-flex h-8 w-8 items-center justify-center rounded hover:bg-white/10">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <div className="flex items-center gap-7">
+            <button
+              className="text-xl font-medium transition-colors relative text-[#a625fc]"
+            >
+              Merchant
               <div className="absolute -bottom-1 left-0 right-0 h-[1px] bg-[#a625fc]" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("payment")}
-            className={`text-xl font-medium transition-colors ${activeTab === "payment" ? "text-white" : "text-white/60"}`}
-          >
-            Payment
-          </button>
+            </button>
+            <Link
+              href="/scan-pay"
+              className="text-xl font-medium transition-colors text-white/60 hover:text-white"
+            >
+              Payment
+            </Link>
+          </div>
         </div>
 
         {/* 二维码区域 */}
@@ -316,13 +320,6 @@ export default function MerchantCodePage() {
 
         {error && <div className="text-red-400 text-sm mb-4">{error}</div>}
 
-        {/* 返回主页链接 */}
-        <Link
-          href="/"
-          className="mt-8 block text-center text-[#7d7f88] hover:text-white transition-colors"
-        >
-          Back to Home
-        </Link>
       </div>
     </div>
   );

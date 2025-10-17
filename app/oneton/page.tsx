@@ -272,7 +272,6 @@ export default function OneToNPage() {
 
           {msg && <div className="text-sm opacity-80">{msg}</div>}
           <Link className="text-center rounded-full bg-gradient-to-r from-[#a625fc] to-[#f89318] p-3 font-medium" href="/history">Transfer History</Link>
-          <Link className="text-center rounded-lg border border-white/15 p-2 hover:bg-white/5" href="/">Back to Home</Link>
         </div>
       </div>
     </div>

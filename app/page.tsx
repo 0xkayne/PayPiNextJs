@@ -155,8 +155,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090b0c] text-white">
-      <div className="mx-auto max-w-md p-8 sm:p-10">
+    <div className="min-h-screen bg-[#090b0c] text-white flex flex-col">
+      <div className="mx-auto w-full max-w-md flex-1 flex flex-col px-5 sm:px-6 pt-4 pb-6">
         {/* 顶部状态与登录区 */}
         <div className="mb-4">
           <div className="flex items-center justify-between">
@@ -188,86 +188,49 @@ export default function Home() {
           )}
         </div>
 
-        {/* Logo 图片（替换文字） */}
-        <div className="mt-6 mb-10 flex items-center justify-center">
-          <Image
-            src="/PayPi.svg"
-            width={264}
-            height={110}
-            alt="PayPi logo"
-            priority
-            className="mx-auto select-none"
-          />
-        </div>
+        {/* 垂直居中的内容区域 */}
+        <div className="flex-1 flex flex-col justify-center">
+          {/* Logo 图片（替换文字） */}
+          <div className="mb-8 flex items-center justify-center">
+            <Image
+              src="/PayPi.svg"
+              width={264}
+              height={110}
+              alt="PayPi logo"
+              priority
+              className="mx-auto select-none"
+            />
+          </div>
 
-        {/* Features */}
-        <div className="grid gap-5">
-          {/* 1. One-to-many Transfer */}
-          <Link href="/oneton" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
-            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 7h11" />
-                <path d="M10 11h11" />
-                <path d="M4 15h11" />
-                <path d="M14 5l3 2-3 2" />
-                <path d="M18 13l3 2-3 2" />
-              </svg>
-            </span>
-            <span className="font-semibold text-lg">One-to-many Transfer</span>
-          </Link>
+          {/* Features */}
+          <div className="grid gap-4 sm:gap-5">
+            {/* 1. One-to-many Transfer */}
+            <Link href="/oneton" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-5 sm:p-6 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+              <span className="mr-4 inline-flex h-12 w-12 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/15 flex-shrink-0">
+                <svg viewBox="0 0 24 24" className="h-7 w-7 sm:h-6 sm:w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7h11" />
+                  <path d="M10 11h11" />
+                  <path d="M4 15h11" />
+                  <path d="M14 5l3 2-3 2" />
+                  <path d="M18 13l3 2-3 2" />
+                </svg>
+              </span>
+              <span className="font-semibold text-lg sm:text-base">One-to-many Transfer</span>
+            </Link>
 
-          {/* 2. Red Envelope */}
-          <Link href="/red-envelope" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
-            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path d="M4 8h16" />
-                <circle cx="12" cy="13" r="2.5" />
-              </svg>
-            </span>
-            <span className="font-semibold text-lg">Password Red Envelope</span>
-          </Link>
+            {/* 2. Red Envelope */}
+            <Link href="/red-envelope" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-5 sm:p-6 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
+              <span className="mr-4 inline-flex h-12 w-12 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/15 flex-shrink-0">
+                <svg viewBox="0 0 24 24" className="h-7 w-7 sm:h-6 sm:w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="3" width="16" height="18" rx="2" />
+                  <path d="M4 8h16" />
+                  <circle cx="12" cy="13" r="2.5" />
+                </svg>
+              </span>
+              <span className="font-semibold text-lg sm:text-base">Password Red Envelope</span>
+            </Link>
 
-          {/* 3. Register merchant paycode / View my paycode */}
-          <Link href="/merchant-code" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
-            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* Merchant paycode / QR code */}
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 7h16" />
-                <path d="M5 7v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
-                <rect x="7" y="10" width="4" height="4" rx="1" />
-                <path d="M15 10h2M17 12h-2M15 14h2" />
-              </svg>
-            </span>
-            <span className="font-semibold text-lg">Register merchant paycode / View my paycode</span>
-          </Link>
-
-          {/* 4. Scan to pay */}
-          <Link href="/scan-pay" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
-            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* Scan to pay icon */}
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                <rect x="8" y="8" width="8" height="8" rx="1" />
-              </svg>
-            </span>
-            <span className="font-semibold text-lg">Scan to pay</span>
-          </Link>
-
-          {/* 5. View my information */}
-          <Link href="/me" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
-            <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* User avatar icon */}
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="7.5" r="3" />
-                <path d="M5 20a7 7 0 0 1 14 0" />
-              </svg>
-            </span>
-            <span className="font-semibold text-lg">View my information</span>
-          </Link>
+          </div>
         </div>
       </div>
     </div>

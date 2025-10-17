@@ -29,32 +29,32 @@ export default function MePage() {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">My Information</h2>
-      {!piUsername && (
-        <div className="opacity-75 text-sm mb-3">Not logged in, please complete Pi login on the home page, or complete account login on the "User Registration/Login" page.</div>
-      )}
-      {piUsername && (
-        <div className="border rounded p-4 text-sm grid gap-2">
-          <div><span className="opacity-60">Pi Username：</span>{piUsername}</div>
-          <div><span className="opacity-60">Wallet Address：</span><span className="font-mono">{walletAddress || "Not obtained (please complete Pi login on the home page)"}</span></div>
-          <div className="flex items-center justify-between">
-            <span>
-              <span className="opacity-60">Pi Balance：</span>
-              <span>{piBalance}</span>
-            </span>
-            <button
-              className="text-xs border rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={checkBalance}
-            >
-              View Balance
-            </button>
-          </div>
+    <div className="min-h-screen bg-[#090b0c] text-white">
+      <div className="p-6 max-w-md mx-auto">
+        <h2 className="text-2xl font-semibold mb-4">My Information</h2>
+        {!piUsername && (
+          <div className="opacity-75 text-sm mb-3">Not logged in, please complete Pi login on the home page, or complete account login on the &ldquo;User Registration/Login&rdquo; page.</div>
+        )}
+        {piUsername && (
+          <div className="border rounded p-4 text-sm grid gap-2">
+            <div><span className="opacity-60">Pi Username：</span>{piUsername}</div>
+            <div><span className="opacity-60">Wallet Address：</span><span className="font-mono">{walletAddress || "Not obtained (please complete Pi login on the home page)"}</span></div>
+            <div className="flex items-center justify-between">
+              <span>
+                <span className="opacity-60">Pi Balance：</span>
+                <span>{piBalance}</span>
+              </span>
+              <button
+                className="text-xs border rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={checkBalance}
+              >
+                View Balance
+              </button>
+            </div>
 
-        </div>
-      )}
-      <div className="mt-4">
-        <Link className="text-center border rounded p-2 inline-block" href="/">Return to Main Interface</Link>
+          </div>
+        )}
+
       </div>
     </div>
   );
