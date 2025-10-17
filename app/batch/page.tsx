@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
+import { useRequireAuth } from "../contexts/AuthContext";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -18,6 +20,7 @@ async function api<T extends JsonRecord>(path: string, method: string, body?: T,
 type Item = { toAddress: string; amountPi: number };
 
 export default function BatchPage() {
+  const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
   const [items, setItems] = useState<Item[]>([{ toAddress: "", amountPi: 0 }]);
   const [merchantId, setMerchantId] = useState("");
   const [msg, setMsg] = useState("");
@@ -26,6 +29,32 @@ export default function BatchPage() {
   const updateItem = (idx: number, field: keyof Item, value: string) => {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: field === "amountPi" ? Number(value) : value } : it)));
   };
+
+  // 显示加载状态
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg mb-2">Checking login status...</div>
+          <div className="text-sm opacity-60">Please wait</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录且不在 Pi Browser - 显示提示
+  if (!isAuthenticated && !isPiBrowser) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-lg mb-4">Please open in Pi Browser</div>
+          <Link href="/" className="text-[#a625fc] underline">
+            Return to home page
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-2xl mx-auto">

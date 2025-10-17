@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useRequireAuth } from "../contexts/AuthContext";
 
 export default function OneToNPage() {
+  const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
+
   type Row = { id: string; address: string; amount: string; touchedAddr?: boolean; touchedAmt?: boolean };
 
   const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -56,50 +59,10 @@ export default function OneToNPage() {
     );
   };
 
-  // 确保 SDK 初始化为 Testnet
-  useEffect(() => {
-    const w = window as unknown as { Pi?: { init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void } };
-    try { w.Pi?.init?.({ version: "2.0", sandbox: true, appName: "PayPi" }); } catch { }
-  }, []);
-
-  async function ensureAuthenticated(): Promise<string> {
-    const w = window as unknown as {
-      Pi?: {
-        authenticate: (
-          scopes: string[],
-          onIncompletePaymentFound: (payment: unknown) => void
-        ) => Promise<{ accessToken: string; user?: { username?: string } }>;
-      };
-    };
-    if (!w.Pi) throw new Error("Please open this app in Pi Browser to use full features. ");
-
-    const resolveIncomplete = async (payment: unknown) => {
-      const p = payment as { identifier?: string; paymentId?: string; id?: string; transaction?: { txid?: string; id?: string } } | null;
-      try {
-        const paymentId = p?.identifier || p?.paymentId || p?.id;
-        const txid = p?.transaction?.txid || p?.transaction?.id;
-        if (paymentId && txid) {
-          await fetch("/api/v1/payments/complete", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ paymentId, txid }),
-          });
-        }
-      } catch {
-        // ignore; 用户稍后可重试
-      }
-    };
-
-    // 若已登录且标记已授权 payments，则复用现有 token；否则请求授权
-    const hasPayments = localStorage.getItem("pi_has_payments") === "1";
-    let token = localStorage.getItem("pi_accessToken") || "";
-    if (!hasPayments || !token) {
-      const auth = await w.Pi.authenticate(["username", "wallet_address", "payments"], resolveIncomplete);
-      token = auth.accessToken;
-      localStorage.setItem("pi_accessToken", token);
-      if (auth.user?.username) localStorage.setItem("pi_username", auth.user.username);
-      localStorage.setItem("pi_has_payments", "1");
-    }
+  // 获取 access token（已由 AuthContext 管理登录）
+  function getAccessToken(): string {
+    const token = localStorage.getItem("pi_accessToken") || "";
+    if (!token) throw new Error("Not authenticated");
     return token;
   }
 
@@ -120,7 +83,7 @@ export default function OneToNPage() {
     };
     if (!w.Pi) throw new Error("Please open this app in Pi Browser to use full features. ");
 
-    await ensureAuthenticated();
+    getAccessToken(); // 验证已登录
 
     const batchId = `batch_${Date.now()}`;
     const totalAmount = items.reduce((s, it) => s + it.amount, 0);
@@ -164,6 +127,32 @@ export default function OneToNPage() {
         }
       );
     });
+  }
+
+  // 显示加载状态
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg mb-2">Checking login status...</div>
+          <div className="text-sm opacity-60">Please wait</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录且不在 Pi Browser - 显示提示
+  if (!isAuthenticated && !isPiBrowser) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-lg mb-4">Please open in Pi Browser</div>
+          <Link href="/" className="text-[#a625fc] underline">
+            Return to home page
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

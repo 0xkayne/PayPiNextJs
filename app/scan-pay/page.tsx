@@ -2,8 +2,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRequireAuth } from "../contexts/AuthContext";
 
 export default function ScanPayPage() {
+  const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
   const [amount, setAmount] = useState("1");
   const [yourAddress, setYourAddress] = useState("");
   const [receivingAddress, setReceivingAddress] = useState("");
@@ -76,46 +78,10 @@ export default function ScanPayPage() {
     : usdAmount * (piPerUsd || 100);
   const canPayAmount = Number.isFinite(piAmount) && piAmount > 0;
 
-  // 确保 SDK 初始化（Testnet/Sandbox 优先）
-  useEffect(() => {
-    const w = window as unknown as { Pi?: { init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void } };
-    try { w.Pi?.init?.({ version: "2.0", sandbox: true, appName: "PayPi" }); } catch { }
-  }, []);
-
-  async function ensureAuthenticated(): Promise<string> {
-    const w = window as unknown as {
-      Pi?: {
-        authenticate: (
-          scopes: string[],
-          onIncompletePaymentFound: (payment: unknown) => void
-        ) => Promise<{ accessToken: string; user?: { username?: string } }>;
-      };
-    };
-    if (!w.Pi) throw new Error("请在 Pi Browser 中使用此功能");
-
-    const resolveIncomplete = async (payment: unknown) => {
-      const p = payment as { identifier?: string; paymentId?: string; id?: string; transaction?: { txid?: string; id?: string } } | null;
-      try {
-        const paymentId = p?.identifier || p?.paymentId || p?.id;
-        const txid = p?.transaction?.txid || p?.transaction?.id;
-        if (paymentId && txid) {
-          await fetch("/api/v1/payments/complete", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ paymentId, txid }),
-          });
-        }
-      } catch {
-        // ignore; 用户稍后可重试
-      }
-    };
-
-    // 关键修正：每次支付前都显式申请 payments 权限，避免 scope 缺失
-    const auth = await (w.Pi as Required<typeof w.Pi>).authenticate(["payments", "username", "wallet_address"], resolveIncomplete);
-    const token = auth.accessToken;
-    localStorage.setItem("pi_accessToken", token);
-    if (auth.user?.username) localStorage.setItem("pi_username", auth.user.username);
-    localStorage.setItem("pi_has_payments", "1");
+  // 获取 access token（已由 AuthContext 管理登录）
+  function getAccessToken(): string {
+    const token = localStorage.getItem("pi_accessToken") || "";
+    if (!token) throw new Error("Not authenticated");
     return token;
   }
 
@@ -139,7 +105,7 @@ export default function ScanPayPage() {
     };
     if (!w.Pi) { setMsg("Please use this feature in Pi Browser"); return; }
 
-    await ensureAuthenticated();
+    getAccessToken(); // 验证已登录
 
     const amountPi = Number(piAmount.toFixed(6));
     const memo = `ScanPay to ${receivingAddress}`;
@@ -273,6 +239,32 @@ export default function ScanPayPage() {
     } catch {
       setScanError("Network error, QR code parsing failed");
     }
+  }
+
+  // 显示加载状态
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg mb-2">Checking login status...</div>
+          <div className="text-sm opacity-60">Please wait</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录且不在 Pi Browser - 显示提示
+  if (!isAuthenticated && !isPiBrowser) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-lg mb-4">Please open in Pi Browser</div>
+          <Link href="/" className="text-[#a625fc] underline">
+            Return to home page
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -2,8 +2,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useRequireAuth } from "../contexts/AuthContext";
 
 export default function MerchantCodePage() {
+  const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
   const [stage, setStage] = useState<"checking" | "init" | "editing" | "generated" | "existing">("checking");
   const [piAddress, setPiAddress] = useState("");
   const [startPi, setStartPi] = useState<string>("");
@@ -128,6 +130,32 @@ export default function MerchantCodePage() {
       setError("生成失败，请重试");
     }
   };
+
+  // 显示加载状态
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg mb-2">Checking login status...</div>
+          <div className="text-sm opacity-60">Please wait</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录且不在 Pi Browser - 显示提示
+  if (!isAuthenticated && !isPiBrowser) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-lg mb-4">Please open in Pi Browser</div>
+          <Link href="/" className="text-[#a625fc] underline">
+            Return to home page
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#090b0c] text-white">

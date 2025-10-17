@@ -1,146 +1,24 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useAuth } from "./contexts/AuthContext";
 
 export default function Home() {
-  const [piReady, setPiReady] = useState(false);
-  const [isPiBrowser, setIsPiBrowser] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const {
+    isAuthenticated,
+    user,
+    isPiBrowser,
+    piReady,
+    login,
+    logout
+  } = useAuth();
 
-
-  // 能力检测：优先通过 ReactNativeWebView 特征判定，再回退到 SDK 能力检测
-  const detectPiEnv = async (timeoutMs = 2000): Promise<boolean> => {
-    const inRNWebView = typeof (window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView !== "undefined";
-    if (inRNWebView) return true;
-
-    const w = window as unknown as {
-      Pi?: {
-        nativeFeaturesList?: () => Promise<string[]>;
-        init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void;
-      };
-    };
-    if (!w.Pi || !w.Pi.nativeFeaturesList) return false;
-
-    const probe = w.Pi.nativeFeaturesList().then(() => true).catch(() => false);
-    const to = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs));
-    return Promise.race([probe, to]);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-    const w = window as unknown as {
-      Pi?: { init?: (cfg: { version: string; sandbox?: boolean; appName: string }) => void };
-    };
-
-    // 始终先尝试初始化（不依赖是否 Pi Browser）
-    if (w.Pi?.init) {
-      try {
-        w.Pi.init({ version: "2.0", sandbox: process.env.NODE_ENV !== "production", appName: "PayPi" });
-        //w.Pi.init({ version: "2.0", sandbox: true, appName: "PayPi" });
-      } catch { }
-    }
-
-    (async () => {
-      const ok = await detectPiEnv(2000);
-      if (cancelled) return;
-      setIsPiBrowser(ok);
-
-      if (!ok) return;
-
-      // Pi 环境下，等待 SDK 就绪
-      const tryReady = () => {
-        if ((window as unknown as { Pi?: unknown }).Pi) {
-          setPiReady(true);
-          return true;
-        }
-        return false;
-      };
-      if (!tryReady()) {
-        const timer = setInterval(() => {
-          if (tryReady()) clearInterval(timer);
-        }, 200);
-        setTimeout(() => clearInterval(timer), 4000);
-      }
-
-      // 恢复本地缓存的登录展示信息（仅用户名在首页展示）
-      const saved = localStorage.getItem("pi_username");
-      if (saved) setUsername(saved);
-    })();
-
-    return () => { cancelled = true; };
-  }, []);
-
-  const loginWithPi = async () => {
-    if (!isPiBrowser) {
-      alert("Please open this app in Pi Browser");
-      return;
-    }
-
-    const w = window as unknown as {
-      Pi?: {
-        init?: (cfg: { version: string; appName: string }) => void;
-        authenticate: (
-          scopes: string[],
-          onIncompletePaymentFound: (payment: unknown) => void
-        ) => Promise<{
-          accessToken: string;
-          user?: {
-            username?: string;
-            uid?: string;
-            walletAddress?: string;
-            wallet_address?: string;
-            [key: string]: unknown;
-          }
-        }>;
-        createPayment: (paymentData: {
-          amount: number;
-          memo: string;
-          metadata?: Record<string, unknown>;
-        }, callbacks: {
-          onReadyForServerApproval: (paymentId: string) => void;
-          onReadyForServerCompletion: (paymentId: string, txid: string) => void;
-          onCancel: (paymentId: string) => void;
-          onError: (error: Error, payment: unknown) => void;
-        }) => unknown;
-      };
-    };
-
-    if (!w.Pi) {
-      alert("Pi SDK not loaded, please refresh the page and try again");
-      return;
-    }
+  const handleLogin = async () => {
     try {
-      const auth = await w.Pi.authenticate([
-        "username",
-        "wallet_address",
-        "payments",
-      ], () => { });
-
-      console.log("Pi authentication result:", auth); // 调试信息
-
-      localStorage.setItem("pi_accessToken", auth.accessToken);
-      localStorage.setItem("pi_username", auth.user?.username || "");
-      // 记录已授予 payments 权限，避免后续重复权限授权弹窗
-      localStorage.setItem("pi_has_payments", "1");
-      setUsername(auth.user?.username || "");
-
-      // 尝试获取钱包地址 - 仅保存到本地，不在首页展示
-      const possibleWalletAddress = auth.user?.uid || auth.user?.walletAddress || auth.user?.wallet_address;
-      if (possibleWalletAddress) {
-        localStorage.setItem("pi_walletAddress", possibleWalletAddress);
-      }
-    } catch {
-      alert("Login failed, please try again");
+      await login();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Login failed");
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("pi_accessToken");
-    localStorage.removeItem("pi_username");
-    localStorage.removeItem("pi_walletAddress");
-    localStorage.removeItem("pi_has_payments");
-    setUsername(null);
   };
 
   // 获取环境状态显示文本
@@ -149,7 +27,7 @@ export default function Home() {
       return "Please open in Pi Browser";
     }
     if (piReady) {
-      return username ? `Logged in: ${username}` : "Not logged in";
+      return isAuthenticated ? `Logged in: ${user?.username}` : "Not logged in";
     }
     return "Pi SDK loading...";
   };
@@ -161,12 +39,12 @@ export default function Home() {
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div className="text-xs opacity-80">{getEnvironmentStatus()}</div>
-            {isPiBrowser && username ? (
+            {isPiBrowser && isAuthenticated ? (
               <button className="border border-white/20 rounded px-3 py-1 hover:bg-white/10" onClick={logout}>Logout</button>
             ) : (
               <button
                 className="border border-white/20 rounded px-3 py-1 hover:bg-white/10 disabled:opacity-50"
-                onClick={loginWithPi}
+                onClick={handleLogin}
                 disabled={!isPiBrowser || !piReady}
               >
                 Login with Pi

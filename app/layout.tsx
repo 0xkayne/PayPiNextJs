@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Script from "next/script";
 import BottomNav from "./components/BottomNav";
+import { AuthProvider } from "./contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "PayPi",
@@ -17,10 +18,12 @@ export default function RootLayout({
     <html lang="zh">
       <body className="antialiased">
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-        <div className="pb-20">
-          {children}
-        </div>
-        <BottomNav />
+        <AuthProvider>
+          <div className="pb-20">
+            {children}
+          </div>
+          <BottomNav />
+        </AuthProvider>
       </body>
     </html>
   );
