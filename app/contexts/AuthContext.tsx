@@ -1,15 +1,25 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 
+// 完整的用户信息接口
 interface User {
+  uid: string;
   username: string;
   walletAddress: string | null;
+}
+
+// 钱包信息接口
+interface WalletInfo {
+  address: string;
+  network: string;
 }
 
 interface AuthContextType {
   // 状态
   isAuthenticated: boolean;
   user: User | null;
+  accessToken: string | null;
+  walletInfo: WalletInfo | null;
   isPiBrowser: boolean;
   piReady: boolean;
   isLoading: boolean;
@@ -17,6 +27,7 @@ interface AuthContextType {
   // 方法
   login: () => Promise<void>;
   logout: () => void;
+  fetchWalletInfo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,6 +52,8 @@ const detectPiEnv = async (timeoutMs = 2000): Promise<boolean> => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [isPiBrowser, setIsPiBrowser] = useState(false);
   const [piReady, setPiReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,15 +103,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // 4. 恢复本地登录状态
+      const savedUid = localStorage.getItem("pi_uid");
       const savedUsername = localStorage.getItem("pi_username");
       const savedWallet = localStorage.getItem("pi_walletAddress");
       const savedToken = localStorage.getItem("pi_accessToken");
+      const savedWalletNetwork = localStorage.getItem("pi_walletNetwork");
 
-      if (savedUsername && savedToken) {
+      if (savedUid && savedUsername && savedToken) {
         setUser({
+          uid: savedUid,
           username: savedUsername,
           walletAddress: savedWallet,
         });
+        setAccessToken(savedToken);
+
+        // 恢复钱包信息
+        if (savedWallet) {
+          setWalletInfo({
+            address: savedWallet,
+            network: savedWalletNetwork || 'testnet',
+          });
+        }
       }
 
       setIsLoading(false);
@@ -141,43 +166,112 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         () => { } // onIncompletePaymentFound
       );
 
-      // 保存到 localStorage
-      localStorage.setItem("pi_accessToken", auth.accessToken);
-      localStorage.setItem("pi_username", auth.user?.username || "");
-      localStorage.setItem("pi_has_payments", "1");
+      console.log("Pi authentication result:", auth);
 
-      const possibleWallet = auth.user?.uid || auth.user?.walletAddress || auth.user?.wallet_address;
-      if (possibleWallet) {
-        localStorage.setItem("pi_walletAddress", possibleWallet);
-      }
+      // 保存到 localStorage
+      const uid = auth.user?.uid || "";
+      const username = auth.user?.username || "";
+
+      localStorage.setItem("pi_accessToken", auth.accessToken);
+      localStorage.setItem("pi_uid", uid);
+      localStorage.setItem("pi_username", username);
+      localStorage.setItem("pi_has_payments", "1");
 
       // 更新状态
       setUser({
-        username: auth.user?.username || "",
-        walletAddress: possibleWallet || null,
+        uid,
+        username,
+        walletAddress: null, // 稍后通过 API 获取
       });
-    } catch (error) {
+      setAccessToken(auth.accessToken);
+    } catch {
       throw new Error("Login failed, please try again");
     }
   }, [isPiBrowser]);
 
+  // 获取完整的钱包信息
+  const fetchWalletInfo = useCallback(async () => {
+    if (!accessToken) {
+      throw new Error("Not authenticated");
+    }
+
+    console.log("=== Fetching wallet info ===");
+    console.log("Access token (first 20 chars):", accessToken.substring(0, 20) + "...");
+
+    try {
+      const response = await fetch("/api/v1/pi/user-info", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      console.log("Backend API response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Backend API error:", errorData);
+        throw new Error(errorData.error || `Failed to fetch user info (${response.status})`);
+      }
+
+      const data = await response.json();
+      console.log("Complete user data from Pi Platform:", data);
+
+      if (data.success && data.data) {
+        const walletAddress = data.data.wallet_address || null;
+        const network = data.data.network || 'testnet';
+
+        // 更新用户信息
+        setUser(prev => prev ? {
+          ...prev,
+          walletAddress,
+        } : null);
+
+        // 更新钱包信息
+        if (walletAddress) {
+          const walletData: WalletInfo = {
+            address: walletAddress,
+            network,
+          };
+          setWalletInfo(walletData);
+
+          // 保存到 localStorage
+          localStorage.setItem("pi_walletAddress", walletAddress);
+          localStorage.setItem("pi_walletNetwork", network);
+        } else {
+          console.warn("No wallet_address in response - user may not have created wallet yet");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching wallet info:", error);
+      throw error;
+    }
+  }, [accessToken]);
+
   // 登出方法
   const logout = useCallback(() => {
     localStorage.removeItem("pi_accessToken");
+    localStorage.removeItem("pi_uid");
     localStorage.removeItem("pi_username");
     localStorage.removeItem("pi_walletAddress");
+    localStorage.removeItem("pi_walletNetwork");
     localStorage.removeItem("pi_has_payments");
     setUser(null);
+    setAccessToken(null);
+    setWalletInfo(null);
   }, []);
 
   const value: AuthContextType = {
     isAuthenticated: !!user,
     user,
+    accessToken,
+    walletInfo,
     isPiBrowser,
     piReady,
     isLoading,
     login,
     logout,
+    fetchWalletInfo,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
