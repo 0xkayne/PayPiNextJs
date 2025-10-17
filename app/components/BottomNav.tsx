@@ -42,7 +42,7 @@ export default function BottomNav() {
           <Link href="/" className="flex flex-col items-center justify-center relative">
             <div className="w-[38px] h-[38px] flex items-center justify-center -mt-1">
               <Image
-                src={isActive("/") ? "/+ purple.svg" : "/+ white.svg"}
+                src={isActive("/") ? "/homePurple.svg" : "/homeWhite.svg"}
                 alt="Home"
                 width={38}
                 height={38}
