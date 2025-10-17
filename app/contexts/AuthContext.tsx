@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 
 interface User {
+  uid: string;           // 应用内用户唯一标识
   username: string;
   walletAddress: string | null;
 }
@@ -10,6 +11,7 @@ interface AuthContextType {
   // 状态
   isAuthenticated: boolean;
   user: User | null;
+  accessToken: string | null;  // 访问令牌
   isPiBrowser: boolean;
   piReady: boolean;
   isLoading: boolean;
@@ -41,6 +43,7 @@ const detectPiEnv = async (timeoutMs = 2000): Promise<boolean> => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isPiBrowser, setIsPiBrowser] = useState(false);
   const [piReady, setPiReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         w.Pi.init({
           version: "2.0",
-          sandbox: process.env.NODE_ENV !== "production",
+          //sandbox: process.env.NODE_ENV !== "production",
+          sandbox: true,
           appName: "PayPi"
         });
       } catch { /* ignore */ }
@@ -90,15 +94,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // 4. 恢复本地登录状态
+      const savedUid = localStorage.getItem("pi_uid");
       const savedUsername = localStorage.getItem("pi_username");
       const savedWallet = localStorage.getItem("pi_walletAddress");
       const savedToken = localStorage.getItem("pi_accessToken");
 
-      if (savedUsername && savedToken) {
+      if (savedUid && savedUsername && savedToken) {
         setUser({
+          uid: savedUid,
           username: savedUsername,
           walletAddress: savedWallet,
         });
+        setAccessToken(savedToken);
       }
 
       setIsLoading(false);
@@ -141,21 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         () => { } // onIncompletePaymentFound
       );
 
-      // 保存到 localStorage
-      localStorage.setItem("pi_accessToken", auth.accessToken);
-      localStorage.setItem("pi_username", auth.user?.username || "");
-      localStorage.setItem("pi_has_payments", "1");
+      console.log("Pi authentication result:", auth); // 调试信息
 
-      const possibleWallet = auth.user?.uid || auth.user?.walletAddress || auth.user?.wallet_address;
-      if (possibleWallet) {
-        localStorage.setItem("pi_walletAddress", possibleWallet);
-      }
+      // 保存到 localStorage - 正确分别保存 uid 和 wallet_address
+      localStorage.setItem("pi_accessToken", auth.accessToken);
+      localStorage.setItem("pi_uid", auth.user?.uid || "");
+      localStorage.setItem("pi_username", auth.user?.username || "");
+      localStorage.setItem("pi_walletAddress", auth.user?.wallet_address || auth.user?.walletAddress || "");
+      localStorage.setItem("pi_has_payments", "1");
 
       // 更新状态
       setUser({
+        uid: auth.user?.uid || "",
         username: auth.user?.username || "",
-        walletAddress: possibleWallet || null,
+        walletAddress: auth.user?.wallet_address || auth.user?.walletAddress || null,
       });
+      setAccessToken(auth.accessToken);
     } catch (error) {
       throw new Error("Login failed, please try again");
     }
@@ -164,15 +172,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 登出方法
   const logout = useCallback(() => {
     localStorage.removeItem("pi_accessToken");
+    localStorage.removeItem("pi_uid");
     localStorage.removeItem("pi_username");
     localStorage.removeItem("pi_walletAddress");
     localStorage.removeItem("pi_has_payments");
     setUser(null);
+    setAccessToken(null);
   }, []);
 
   const value: AuthContextType = {
     isAuthenticated: !!user,
     user,
+    accessToken,
     isPiBrowser,
     piReady,
     isLoading,
