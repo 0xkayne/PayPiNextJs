@@ -73,7 +73,7 @@ export default function Home() {
 
   const loginWithPi = async () => {
     if (!isPiBrowser) {
-      alert("请在 Pi Browser 中打开本应用");
+      alert("Please open this app in Pi Browser");
       return;
     }
 
@@ -107,7 +107,7 @@ export default function Home() {
     };
 
     if (!w.Pi) {
-      alert("Pi SDK 未加载，请刷新页面重试");
+      alert("Pi SDK not loaded, please refresh the page and try again");
       return;
     }
     try {
@@ -117,7 +117,7 @@ export default function Home() {
         "payments",
       ], () => { });
 
-      console.log("Pi 认证结果:", auth); // 调试信息
+      console.log("Pi authentication result:", auth); // 调试信息
 
       localStorage.setItem("pi_accessToken", auth.accessToken);
       localStorage.setItem("pi_username", auth.user?.username || "");
@@ -131,7 +131,7 @@ export default function Home() {
         localStorage.setItem("pi_walletAddress", possibleWalletAddress);
       }
     } catch {
-      alert("登录失败，请重试");
+      alert("Login failed, please try again");
     }
   };
 
@@ -200,8 +200,9 @@ export default function Home() {
           />
         </div>
 
-        {/* 主功能卡片（与 Figma 对齐） */}
+        {/* Features */}
         <div className="grid gap-5">
+          {/* 1. One-to-many Transfer */}
           <Link href="/oneton" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
             <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
               <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -215,6 +216,7 @@ export default function Home() {
             <span className="font-semibold text-lg">One-to-many Transfer</span>
           </Link>
 
+          {/* 2. Red Envelope */}
           <Link href="/red-envelope" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
             <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
               <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -223,15 +225,13 @@ export default function Home() {
                 <circle cx="12" cy="13" r="2.5" />
               </svg>
             </span>
-            <span className="font-semibold text-lg">Password Gifts</span>
+            <span className="font-semibold text-lg">Password Red Envelope</span>
           </Link>
-        </div>
 
-        {/* 其他功能入口，保持功能不变但样式与主卡片一致 */}
-        <div className="mt-8 grid gap-5">
+          {/* 3. Register merchant paycode / View my paycode */}
           <Link href="/merchant-code" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
             <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* 店铺/二维码图标 */}
+              {/* Merchant paycode / QR code */}
               <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 7h16" />
                 <path d="M5 7v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
@@ -242,9 +242,10 @@ export default function Home() {
             <span className="font-semibold text-lg">Register merchant paycode / View my paycode</span>
           </Link>
 
+          {/* 4. Scan to pay */}
           <Link href="/scan-pay" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
             <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* 扫码图标 */}
+              {/* Scan to pay icon */}
               <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                 <path d="M17 3h2a2 2 0 0 1 2 2v2" />
@@ -256,9 +257,10 @@ export default function Home() {
             <span className="font-semibold text-lg">Scan to pay</span>
           </Link>
 
+          {/* 5. View my information */}
           <Link href="/me" className="rounded-2xl bg-[#8b22f4] hover:bg-[#a625fc] transition-colors p-5 flex items-center shadow-[0_8px_24px_rgba(166,37,252,0.25)]">
             <span className="mr-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {/* 用户头像图标 */}
+              {/* User avatar icon */}
               <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="7.5" r="3" />
                 <path d="M5 20a7 7 0 0 1 14 0" />

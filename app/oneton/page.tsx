@@ -71,7 +71,7 @@ export default function OneToNPage() {
         ) => Promise<{ accessToken: string; user?: { username?: string } }>;
       };
     };
-    if (!w.Pi) throw new Error("请在 Pi Browser 中使用此功能");
+    if (!w.Pi) throw new Error("Please open this app in Pi Browser to use full features. ");
 
     const resolveIncomplete = async (payment: unknown) => {
       const p = payment as { identifier?: string; paymentId?: string; id?: string; transaction?: { txid?: string; id?: string } } | null;
@@ -118,13 +118,13 @@ export default function OneToNPage() {
         ) => void;
       };
     };
-    if (!w.Pi) throw new Error("请在 Pi Browser 中使用此功能");
+    if (!w.Pi) throw new Error("Please open this app in Pi Browser to use full features. ");
 
     await ensureAuthenticated();
 
     const batchId = `batch_${Date.now()}`;
     const totalAmount = items.reduce((s, it) => s + it.amount, 0);
-    if (!Number.isFinite(totalAmount) || totalAmount <= 0) throw new Error("总金额无效");
+    if (!Number.isFinite(totalAmount) || totalAmount <= 0) throw new Error("Invalid total amount");
 
     await new Promise<void>((resolve, reject) => {
       w.Pi!.createPayment(
@@ -141,9 +141,9 @@ export default function OneToNPage() {
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({ paymentId }),
               });
-              if (!r.ok) throw new Error("服务器审批失败");
+              if (!r.ok) throw new Error("Server approval failed");
             } catch (e) {
-              reject(e instanceof Error ? e : new Error("服务器审批失败"));
+              reject(e instanceof Error ? e : new Error("Server approval failed"));
             }
           },
           onReadyForServerCompletion: async (paymentId, txid) => {
@@ -153,13 +153,13 @@ export default function OneToNPage() {
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({ paymentId, txid }),
               });
-              if (!r.ok) throw new Error("服务器完成失败");
+              if (!r.ok) throw new Error("Server completion failed");
               resolve();
             } catch (e) {
-              reject(e instanceof Error ? e : new Error("服务器完成失败"));
+              reject(e instanceof Error ? e : new Error("Server completion failed"));
             }
           },
-          onCancel: () => reject(new Error("用户取消支付")),
+          onCancel: () => reject(new Error("User cancelled payment")),
           onError: (error: Error) => reject(error),
         }
       );
@@ -203,7 +203,7 @@ export default function OneToNPage() {
                       }}
                     />
                     {(addrEmpty || addrFormatBad) && (
-                      <div className="sm:hidden text-xs text-red-500 mt-1">{addrEmpty ? "地址不能为空" : "地址格式错误：需为 56 位大写字母或数字"}</div>
+                      <div className="sm:hidden text-xs text-red-500 mt-1">{addrEmpty ? "Address cannot be empty" : "Address format error: must be 56 characters or numbers"}</div>
                     )}
                     <input
                       className={`rounded-lg w-full sm:w-28 max-w-[8rem] px-3 py-2 bg-white/10 placeholder-white/40 outline-none border text-right ${amtInvalid ? "border-red-500" : "border-white/15"}`}
@@ -221,7 +221,7 @@ export default function OneToNPage() {
                   </div>
                   {/* 桌面/大屏在输入行下方提示 */}
                   {(addrEmpty || addrFormatBad) && (
-                    <div className="hidden sm:block text-xs text-red-500 mt-1">{addrEmpty ? "地址不能为空" : "地址格式错误：需为 56 位大写字母或数字"}</div>
+                    <div className="hidden sm:block text-xs text-red-500 mt-1">{addrEmpty ? "Address cannot be empty" : "Address format error: must be 56 characters or numbers"}</div>
                   )}
                 </div>
               );
@@ -252,21 +252,21 @@ export default function OneToNPage() {
                   .map((r) => ({ toAddress: r.address.trim(), amount: Number(r.amount) }))
                   .filter((it) => it.toAddress && Number.isFinite(it.amount) && it.amount > 0);
                 if (!items.length) {
-                  setMsg("请填写有效的收款地址与金额");
+                  setMsg("Please fill in valid recipient addresses and amounts");
                   return;
                 }
                 setSubmitting(true);
                 try {
                   await sendSingle(items);
-                  setMsg("全部支付流程已完成");
+                  setMsg("All payment processes have been completed successfully");
                 } catch (e) {
-                  setMsg(e instanceof Error ? e.message : "支付失败，请重试");
+                  setMsg(e instanceof Error ? e.message : "Payment failed, please try again");
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
-              {submitting ? "发送中..." : "Continue to Transfer"}
+              {submitting ? "Sending..." : "Continue to Transfer"}
             </button>
           </div>
 

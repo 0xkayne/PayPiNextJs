@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function MePage() {
   const [piUsername, setPiUsername] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const piBalance = "请在Pi钱包中查看";
+  const piBalance = "Please check your Pi wallet";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -24,37 +24,37 @@ export default function MePage() {
 
   const checkBalance = () => {
     alert(
-      "由于隐私和安全考虑，Pi SDK 不提供直接查询余额的功能。请打开 Pi 钱包查看您的余额：\n\n1. 在 Pi Browser 中点击底部的钱包图标\n2. 或者访问 wallet.pi 查看详细信息"
+      "Due to privacy and security considerations, the Pi SDK does not provide a direct balance query function. Please open your Pi wallet to view your balance:\n\n1. Click the wallet icon at the bottom of Pi Browser\n2. Or visit wallet.pi for detailed information"
     );
   };
 
   return (
     <div className="p-6 max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">我的信息</h2>
+      <h2 className="text-2xl font-semibold mb-4">My Information</h2>
       {!piUsername && (
-        <div className="opacity-75 text-sm mb-3">未登录，请在主页完成 Pi 登录，或在“用户注册/登录”页完成账号登录。</div>
+        <div className="opacity-75 text-sm mb-3">Not logged in, please complete Pi login on the home page, or complete account login on the "User Registration/Login" page.</div>
       )}
       {piUsername && (
         <div className="border rounded p-4 text-sm grid gap-2">
-          <div><span className="opacity-60">Pi 用户名：</span>{piUsername}</div>
-          <div><span className="opacity-60">钱包地址：</span><span className="font-mono">{walletAddress || "未获取（请在主页完成 Pi 登录）"}</span></div>
+          <div><span className="opacity-60">Pi Username：</span>{piUsername}</div>
+          <div><span className="opacity-60">Wallet Address：</span><span className="font-mono">{walletAddress || "Not obtained (please complete Pi login on the home page)"}</span></div>
           <div className="flex items-center justify-between">
             <span>
-              <span className="opacity-60">Pi 余额：</span>
+              <span className="opacity-60">Pi Balance：</span>
               <span>{piBalance}</span>
             </span>
             <button
               className="text-xs border rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={checkBalance}
             >
-              查看余额
+              View Balance
             </button>
           </div>
 
         </div>
       )}
       <div className="mt-4">
-        <Link className="text-center border rounded p-2 inline-block" href="/">返回主界面</Link>
+        <Link className="text-center border rounded p-2 inline-block" href="/">Return to Main Interface</Link>
       </div>
     </div>
   );
