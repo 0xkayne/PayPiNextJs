@@ -19,6 +19,8 @@ model PiUser {
   sessions      Session[]
   paycode       MerchantPaycode?
   batchTasks    BatchTransferTask[]
+  redEnvelopes  RedEnvelope[] @relation("RedEnvelopeCreator")
+  claimedEnvelopes RedEnvelope[] @relation("RedEnvelopeClaimer")
 }
 
 model Session {
@@ -82,6 +84,45 @@ model A2UPayment {
   completedAt     DateTime?
   
   @@index([batchTaskId])
+  @@index([status])
+}
+
+// 红包记录表
+model RedEnvelope {
+  id              String    @id @default(uuid())
+  code            String    @unique  // 唯一口令（64位随机hex）
+  creatorUserId   String
+  creator         PiUser    @relation("RedEnvelopeCreator", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  
+  // 金额信息
+  amountPi        Decimal   @db.Decimal(18, 6)
+  
+  // U2A 支付信息（用户转给App）
+  u2aPaymentId    String?   // Pi Network返回的paymentId
+  u2aTxid         String?   // 区块链txid
+  u2aStatus       String    @default("pending") // pending, completed, failed
+  
+  // A2U 支付信息（App转给领取者或退回创建者）
+  a2uPaymentId    String?   @unique
+  a2uTxid         String?
+  a2uStatus       String    @default("none") // none, created, submitted, completed, failed
+  
+  // 领取信息
+  claimedByUserId String?
+  claimedBy       PiUser?   @relation("RedEnvelopeClaimer", fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  claimedByUid    String?   // 领取者的 Pi uid
+  claimedAt       DateTime?
+  
+  // 时间控制
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  
+  // 状态
+  status          String    @default("pending") // pending, active, claimed, expired, refunded
+  
+  @@index([creatorUserId])
+  @@index([code])
   @@index([status])
 }
 

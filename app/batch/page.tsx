@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRequireAuth } from "../contexts/AuthContext";
+import { useSessionToken } from "../hooks/useSessionToken";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -21,21 +22,26 @@ type Item = { toAddress: string; amountPi: number };
 
 export default function BatchPage() {
   const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
+
+  // 使用自定义hook获取sessionToken
+  const { sessionToken: token, isLoading: tokenLoading, error: tokenError } = useSessionToken(isAuthenticated);
+
   const [items, setItems] = useState<Item[]>([{ toAddress: "", amountPi: 0 }]);
   const [merchantId, setMerchantId] = useState("");
   const [msg, setMsg] = useState("");
-  const token = typeof window !== "undefined" ? localStorage.getItem("paypi_token") || "" : "";
 
   const updateItem = (idx: number, field: keyof Item, value: string) => {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: field === "amountPi" ? Number(value) : value } : it)));
   };
 
   // 显示加载状态
-  if (isChecking) {
+  if (isChecking || tokenLoading) {
     return (
       <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg mb-2">Checking login status...</div>
+          <div className="text-lg mb-2">
+            {isChecking ? "Checking login status..." : "Loading session..."}
+          </div>
           <div className="text-sm opacity-60">Please wait</div>
         </div>
       </div>
@@ -48,6 +54,21 @@ export default function BatchPage() {
       <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
         <div className="text-center">
           <div className="text-lg mb-4">Please open in Pi Browser</div>
+          <Link href="/" className="text-[#a625fc] underline">
+            Return to home page
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Token获取失败 - 显示错误
+  if (tokenError) {
+    return (
+      <div className="min-h-screen bg-[#090b0c] text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-lg mb-4 text-red-400">Session Error</div>
+          <div className="text-sm opacity-60 mb-4">{tokenError}</div>
           <Link href="/" className="text-[#a625fc] underline">
             Return to home page
           </Link>

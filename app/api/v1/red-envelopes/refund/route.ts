@@ -28,15 +28,15 @@ export async function POST(req: NextRequest) {
   if (auth.error || !auth.user) return auth.res;
 
   try {
-    const { code, receiverUid } = await req.json();
+    const { envelopeId } = await req.json();
 
-    if (!code || !receiverUid) {
-      return Response.json({ error: "缺少必要参数" }, { status: 400 });
+    if (!envelopeId) {
+      return Response.json({ error: "缺少红包ID" }, { status: 400 });
     }
 
     // 2. 查找红包
     const envelope = await prisma.redEnvelope.findUnique({
-      where: { code },
+      where: { id: envelopeId },
       include: { creator: true },
     });
 
@@ -44,46 +44,42 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "红包不存在" }, { status: 404 });
     }
 
-    // 3. 验证红包状态
-    if (envelope.status === "claimed") {
-      return Response.json({ error: "红包已被领取" }, { status: 400 });
+    // 3. 验证是创建者
+    if (envelope.creatorUserId !== auth.user.id) {
+      return Response.json({ error: "无权限" }, { status: 403 });
     }
 
-    if (envelope.status !== "active") {
-      return Response.json({ error: "红包不可用" }, { status: 400 });
+    // 4. 验证状态
+    if (envelope.status !== "active" && envelope.status !== "expired") {
+      return Response.json({ error: "红包不可退回" }, { status: 400 });
     }
 
-    // 4. 验证是否过期
-    if (new Date() > new Date(envelope.expiresAt)) {
-      await prisma.redEnvelope.update({
-        where: { id: envelope.id },
-        data: { status: "expired" },
-      });
-      return Response.json({ error: "红包已过期" }, { status: 400 });
+    // 5. 验证已过期
+    if (new Date() <= new Date(envelope.expiresAt)) {
+      return Response.json({ error: "红包未过期" }, { status: 400 });
     }
 
-    // 5. 创建 A2U 支付（允许领取自己的红包）
+    // 6. 验证创建者有uid
+    if (!envelope.creator.piUid) {
+      return Response.json({ error: "创建者未设置Pi UID" }, { status: 400 });
+    }
+
+    // 7. 执行 A2U 退回给创建者
     const a2uPaymentId = await createA2UPayment({
-      uid: receiverUid,
+      uid: envelope.creator.piUid,
       amount: parseFloat(envelope.amountPi.toString()),
-      memo: `Claim Password Gift - ${code.substring(0, 8)}`,
-      metadata: { type: "red-envelope-claim", envelopeId: envelope.id, code },
+      memo: `Refund Password Gift - ${envelope.code.substring(0, 8)}`,
+      metadata: { type: "red-envelope-refund", envelopeId: envelope.id },
     });
 
-    // 6. 提交到区块链
     const a2uTxid = await submitA2UPayment(a2uPaymentId);
-
-    // 7. 完成支付
     await completeA2UPayment(a2uPaymentId, a2uTxid);
 
-    // 8. 更新红包状态
+    // 8. 更新状态
     await prisma.redEnvelope.update({
-      where: { id: envelope.id },
+      where: { id: envelopeId },
       data: {
-        status: "claimed",
-        claimedByUserId: auth.user.id,
-        claimedByUid: receiverUid,
-        claimedAt: new Date(),
+        status: "refunded",
         a2uPaymentId,
         a2uTxid,
         a2uStatus: "completed",
@@ -99,10 +95,11 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("领取红包失败:", error);
+    console.error("退回红包失败:", error);
     return Response.json(
-      { error: error instanceof Error ? error.message : "领取红包失败" },
+      { error: error instanceof Error ? error.message : "退回红包失败" },
       { status: 500 }
     );
   }
 }
+
