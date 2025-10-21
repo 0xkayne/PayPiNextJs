@@ -11,7 +11,8 @@
     "db:migrate:batch": "prisma migrate dev --name add_batch_transfer_tables",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@coingecko/coingecko-typescript": "^2.2.0",
