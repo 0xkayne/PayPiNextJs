@@ -205,10 +205,10 @@ export default function OneToNPage() {
               const amtInvalid = r.touchedAmt && !isAmtValid(r.amount);
               return (
                 <div key={r.id} className="rounded-xl bg-white/5 border border-white/10 p-3 sm:p-4 overflow-hidden">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
-                    <span className="hidden sm:inline-flex h-5 w-5 rounded-full bg-white/20 mr-1" />
+                  {/* UID 输入框 - 独占一行 */}
+                  <div className="mb-2">
                     <input
-                      className={`flex-1 min-w-0 max-w-full rounded-lg px-3 py-2 bg-white/10 placeholder-white/40 outline-none border ${addrInvalid ? "border-red-500" : "border-white/15"}`}
+                      className={`w-full rounded-lg px-3 py-2 bg-white/10 placeholder-white/40 outline-none border ${addrInvalid ? "border-red-500" : "border-white/15"}`}
                       placeholder="Receiver Pi UID"
                       value={r.address}
                       onChange={(e) => updateAddr(r.id, e.target.value)}
@@ -217,27 +217,28 @@ export default function OneToNPage() {
                         setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, touchedAddr: true } : x));
                       }}
                     />
+                    {/* 错误提示 */}
                     {(addrEmpty || addrFormatBad) && (
-                      <div className="sm:hidden text-xs text-red-500 mt-1">{addrEmpty ? "Pi UID cannot be empty" : "Invalid Pi UID format"}</div>
+                      <div className="text-xs text-red-500 mt-1">{addrEmpty ? "Pi UID cannot be empty" : "Invalid Pi UID format"}</div>
                     )}
+                  </div>
+
+                  {/* 金额输入框和删除按钮 - 同一行 */}
+                  <div className="flex items-center gap-2">
                     <input
-                      className={`rounded-lg w-full sm:w-28 max-w-[8rem] px-3 py-2 bg-white/10 placeholder-white/40 outline-none border text-right ${amtInvalid ? "border-red-500" : "border-white/15"}`}
+                      className={`flex-1 rounded-lg px-3 py-2 bg-white/10 placeholder-white/40 outline-none border text-right ${amtInvalid ? "border-red-500" : "border-white/15"}`}
                       placeholder="Amount"
                       value={r.amount}
                       onChange={(e) => updateAmt(r.id, e.target.value)}
                     />
                     <button
-                      className="shrink-0 px-2 py-1 text-xs text-white/70 hover:text-white rounded"
+                      className="shrink-0 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-40"
                       onClick={() => removeRow(r.id)}
                       disabled={rows.length <= 1}
                     >
                       Delete
                     </button>
                   </div>
-                  {/* Desktop error messages displayed below input */}
-                  {(addrEmpty || addrFormatBad) && (
-                    <div className="hidden sm:block text-xs text-red-500 mt-1">{addrEmpty ? "Pi UID cannot be empty" : "Invalid Pi UID format"}</div>
-                  )}
                 </div>
               );
             })}

@@ -15,11 +15,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh">
-      <body className="antialiased">
+    <html lang="zh" className="h-full">
+      <body className="antialiased h-full">
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
         <AuthProvider>
-          <div className="pb-20">
+          <div className="pb-20 min-h-full">
             {children}
           </div>
           <BottomNav />
