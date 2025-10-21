@@ -65,4 +65,29 @@ export interface ApiSuccess<T> {
 
 export type ApiResult<T> = ApiSuccess<T> | ApiError;
 
+// 批量转账历史记录类型
+export interface BatchTransferHistory {
+  id: string;
+  batchId: string;
+  totalAmount: string;
+  recipientCount: number;
+  status: string; // pending, processing, completed, failed, partial_completed
+  createdAt: Date | string;
+  completedAt?: Date | string | null;
+  userPaymentId: string;
+  userTxid?: string | null;
+  payments: A2UPaymentHistory[];
+}
+
+export interface A2UPaymentHistory {
+  id: string;
+  toAddress: string;
+  amount: string;
+  status: string; // created, submitted, completed, failed
+  txid?: string | null;
+  errorMessage?: string | null;
+  createdAt: Date | string;
+  completedAt?: Date | string | null;
+}
+
 

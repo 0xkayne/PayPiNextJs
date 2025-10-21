@@ -11,12 +11,14 @@ datasource db {
 
 model PiUser {
   id            String    @id @default(uuid())
+  piUid         String?   @unique
   username      String    @unique
   walletAddress String?
   createdAt     DateTime  @default(now())
 
   sessions      Session[]
   paycode       MerchantPaycode?
+  batchTasks    BatchTransferTask[]
 }
 
 model Session {
@@ -37,6 +39,50 @@ model MerchantPaycode {
   payloadJson  String
   qrPngDataUrl String
   createdAt    DateTime @default(now())
+}
+
+// 批量转账任务记录
+model BatchTransferTask {
+  id              String   @id @default(uuid())
+  batchId         String   @unique  // 前端生成的 batchId
+  userId          String?  // 发起转账的用户 ID
+  user            PiUser?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userPaymentId   String   // U2A 支付的 paymentId
+  userTxid        String?  // U2A 支付的 txid
+  totalAmount     Decimal  @db.Decimal(18, 6)
+  recipientCount  Int
+  status          String   @default("pending") // pending, processing, completed, failed
+  metadata        String   @db.Text  // JSON 存储原始 recipients 数据
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  a2uPayments     A2UPayment[]
+  
+  @@index([userId])
+}
+
+// A2U 支付记录
+model A2UPayment {
+  id              String   @id @default(uuid())
+  batchTaskId     String
+  batchTask       BatchTransferTask @relation(fields: [batchTaskId], references: [id], onDelete: Cascade)
+  
+  paymentId       String   @unique  // Pi Network 返回的 paymentId
+  toAddress       String   @db.VarChar(56)
+  recipientUid    String?  // 收款人的 Pi uid
+  amount          Decimal  @db.Decimal(18, 6)
+  memo            String
+  
+  txid            String?  // 提交到区块链后的 txid
+  status          String   @default("created") // created, submitted, completed, failed
+  errorMessage    String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  submittedAt     DateTime?
+  completedAt     DateTime?
+  
+  @@index([batchTaskId])
+  @@index([status])
 }
 
 

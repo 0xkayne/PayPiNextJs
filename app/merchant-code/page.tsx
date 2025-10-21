@@ -36,10 +36,12 @@ export default function MerchantCodePage() {
 
         // 若无 sessionToken 但有 Pi accessToken，则尝试换取 sessionToken
         if (!sessionToken && piAccessToken && piUsername) {
+          const piUid = localStorage.getItem("pi_uid") || "";
+
           const res = await fetch("/api/v1/auth/pi-login", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ piAccessToken, username: piUsername, walletAddress: piWallet || undefined }),
+            body: JSON.stringify({ piAccessToken, username: piUsername, walletAddress: piWallet || undefined, uid: piUid }),
           });
           const j = await res.json();
           if (!j?.error && j?.data?.sessionToken) {
