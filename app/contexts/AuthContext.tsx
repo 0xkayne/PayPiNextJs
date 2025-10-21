@@ -163,7 +163,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = await w.Pi.authenticate(
         ["username", "wallet_address", "payments"],
-        () => { } // onIncompletePaymentFound
+        (payment) => {
+          // 处理未完成的支付
+          console.log("Found incomplete payment:", payment);
+
+          // 将未完成的支付信息存储到 localStorage，供其他页面使用
+          // 这样各个页面可以检查并完成未完成的支付
+          try {
+            localStorage.setItem("pi_incomplete_payment", JSON.stringify(payment));
+          } catch (error) {
+            console.error("Failed to store incomplete payment:", error);
+          }
+        }
       );
 
       console.log("Pi authentication result:", auth);

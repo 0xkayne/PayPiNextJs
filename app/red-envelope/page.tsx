@@ -75,7 +75,7 @@ export default function RedEnvelopePage() {
         setMyEnvelopes(res.data);
       }
     } catch (error) {
-      console.error("加载红包失败:", error);
+      console.error("Failed to load envelopes:", error);
     }
   }, [token]);
 
@@ -103,7 +103,7 @@ export default function RedEnvelopePage() {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      console.error("复制失败:", err);
+      console.error("Failed to copy:", err);
       // 降级方案：使用传统方法
       const textArea = document.createElement("textarea");
       textArea.value = text;
@@ -116,7 +116,7 @@ export default function RedEnvelopePage() {
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
       } catch (e) {
-        console.error("降级复制也失败:", e);
+        console.error("Failed to copy:", e);
       }
       document.body.removeChild(textArea);
     }
@@ -173,17 +173,17 @@ export default function RedEnvelopePage() {
     const parsedHours = Number(durationHours);
 
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setMsg("请输入有效金额");
+      setMsg("Please enter a valid amount");
       return;
     }
 
     if (!Number.isFinite(parsedHours) || parsedHours <= 0) {
-      setMsg("请输入有效时长");
+      setMsg("Please enter a valid duration");
       return;
     }
 
     if (parsedHours > 24) {
-      setMsg("时长不能超过24小时");
+      setMsg("Duration cannot exceed 24 hours");
       return;
     }
 
@@ -196,7 +196,7 @@ export default function RedEnvelopePage() {
       const createRes = await api("/api/v1/red-envelopes/create", "POST", { amountPi: parsedAmount, expiresAt }, token);
 
       if (!createRes?.data) {
-        setMsg(createRes?.error || "创建失败");
+        setMsg(createRes?.error || "Failed to create");
         setIsLoading(false);
         return;
       }
@@ -219,7 +219,7 @@ export default function RedEnvelopePage() {
       };
 
       if (!w.Pi) {
-        setMsg("请在 Pi Browser 中打开");
+        setMsg("Please open in Pi Browser");
         setIsLoading(false);
         return;
       }
@@ -245,10 +245,10 @@ export default function RedEnvelopePage() {
                 });
 
                 if (!approveRes.ok) {
-                  throw new Error("服务器批准失败");
+                  throw new Error("Failed to approve payment");
                 }
               } catch (e) {
-                reject(e instanceof Error ? e : new Error("批准支付失败"));
+                reject(e instanceof Error ? e : new Error("Failed to approve payment"));
               }
             },
             onReadyForServerCompletion: async (paymentId, txid) => {
@@ -266,13 +266,13 @@ export default function RedEnvelopePage() {
                 if (completeRes.ok) {
                   resolve();
                 } else {
-                  reject(new Error("完成支付失败"));
+                  reject(new Error("Failed to complete payment"));
                 }
               } catch (e) {
-                reject(e instanceof Error ? e : new Error("完成支付失败"));
+                reject(e instanceof Error ? e : new Error("Failed to complete payment"));
               }
             },
-            onCancel: () => reject(new Error("支付已取消")),
+            onCancel: () => reject(new Error("Payment cancelled")),
             onError: (error) => reject(error),
           }
         );
@@ -280,9 +280,9 @@ export default function RedEnvelopePage() {
 
       // 5. 支付完成后显示口令
       setCode(envelopeCode);
-      setMsg("口令红包创建成功!");
+      setMsg("Password gift created successfully!");
     } catch (error) {
-      setMsg(error instanceof Error ? error.message : "创建失败，请重试");
+      setMsg(error instanceof Error ? error.message : "Failed to create, please try again");
     } finally {
       setIsLoading(false);
     }
@@ -292,11 +292,11 @@ export default function RedEnvelopePage() {
   const handleClaimEnvelope = async () => {
     setMsg("");
     if (!code.trim()) {
-      setMsg("请输入口令");
+      setMsg("Please enter the password");
       return;
     }
     if (!receiverUid.trim()) {
-      setMsg("请输入接收者的 Pi UID");
+      setMsg("Please enter the receiver's Pi UID");
       return;
     }
 
@@ -307,11 +307,11 @@ export default function RedEnvelopePage() {
       if (r?.error) {
         setMsg(r.error);
       } else {
-        setMsg(`领取成功！获得 ${r?.data?.amountPi} Pi (txid: ${r?.data?.txid})`);
+        setMsg(`Claimed successfully! Received ${r?.data?.amountPi} Pi (txid: ${r?.data?.txid})`);
         setCode("");
       }
     } catch (error) {
-      setMsg(error instanceof Error ? error.message : "领取失败");
+      setMsg(error instanceof Error ? error.message : "Failed to claim");
     } finally {
       setIsLoading(false);
     }
@@ -319,7 +319,7 @@ export default function RedEnvelopePage() {
 
   // 退回红包
   const handleRefundEnvelope = async (envelopeId: string) => {
-    if (!confirm("确定要退回这个过期红包吗？")) {
+    if (!confirm("Are you sure you want to refund this expired envelope?")) {
       return;
     }
 
@@ -330,12 +330,12 @@ export default function RedEnvelopePage() {
       if (r?.error) {
         setMsg(r.error);
       } else {
-        setMsg(`退回成功！已退回 ${r?.data?.amountPi} Pi`);
+        setMsg(`Refunded successfully! Refunded ${r?.data?.amountPi} Pi`);
         // 重新加载红包列表
         await loadMyEnvelopes();
       }
     } catch (error) {
-      setMsg(error instanceof Error ? error.message : "退回失败");
+      setMsg(error instanceof Error ? error.message : "Failed to refund");
     } finally {
       setIsLoading(false);
     }
@@ -527,7 +527,7 @@ export default function RedEnvelopePage() {
             {/* Success/Error Messages */}
             {code && (
               <div className="bg-[#131519] border border-[#a625fc] rounded-[10px] p-6">
-                <p className="text-[#8d8f99] text-base mb-4 text-center">口令:</p>
+                <p className="text-[#8d8f99] text-base mb-4 text-center">Password:</p>
 
                 {/* 口令显示区域 */}
                 <div className="bg-[#1e2126] border border-[#32363e] rounded-lg p-4 mb-4">
@@ -549,7 +549,7 @@ export default function RedEnvelopePage() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          <span>已复制</span>
+                          <span>Copied</span>
                         </>
                       ) : (
                         <>
@@ -564,7 +564,7 @@ export default function RedEnvelopePage() {
                 </div>
 
                 <p className="text-[#8d8f99] text-sm text-center">
-                  请分享这个口令给朋友，他们可以使用此口令领取红包
+                  Please share this password with your friends, they can use this password to claim the envelope
                 </p>
               </div>
             )}
@@ -612,11 +612,11 @@ export default function RedEnvelopePage() {
 
         {mode === "my-envelopes" && (
           <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-medium text-white mb-2">我创建的红包</h3>
+            <h3 className="text-xl font-medium text-white mb-2">My Password Gifts</h3>
 
             {myEnvelopes.length === 0 ? (
               <div className="bg-[#131519] border border-[#35363c] rounded-[10px] p-8 text-center">
-                <p className="text-[#8d8f99]">还没有创建过红包</p>
+                <p className="text-[#8d8f99]">No password gifts created yet</p>
               </div>
             ) : (
               myEnvelopes.map((env) => (
@@ -625,19 +625,19 @@ export default function RedEnvelopePage() {
                     <div className="flex-1">
                       <p className="text-white text-lg font-medium">{env.amountPi} Pi</p>
                       <p className="text-[#8d8f99] text-sm mt-1">
-                        状态: {
-                          env.status === 'claimed' ? '✅ 已领取' :
-                            env.status === 'expired' ? '⏰ 已过期' :
-                              env.status === 'refunded' ? '↩️ 已退回' :
-                                env.status === 'active' ? '🎁 可领取' : '⏳ 处理中'
+                        Status: {
+                          env.status === 'claimed' ? '✅ Claimed' :
+                            env.status === 'expired' ? '⏰ Expired' :
+                              env.status === 'refunded' ? '↩️ Refunded' :
+                                env.status === 'active' ? '🎁 Claimable' : '⏳ Processing'
                         }
                       </p>
                       <p className="text-[#8d8f99] text-xs mt-1">
-                        过期时间: {new Date(env.expiresAt).toLocaleString('zh-CN')}
+                        Expiration time: {new Date(env.expiresAt).toLocaleString()}
                       </p>
                       {env.claimedBy && (
                         <p className="text-[#8d8f99] text-xs mt-1">
-                          领取者: {env.claimedBy.username}
+                          Claimed by: {env.claimedBy.username}
                         </p>
                       )}
                     </div>
@@ -652,7 +652,7 @@ export default function RedEnvelopePage() {
                     )}
                   </div>
                   <div className="pt-3 border-t border-[#35363c]">
-                    <p className="text-[#8d8f99] text-xs mb-2">口令:</p>
+                    <p className="text-[#8d8f99] text-xs mb-2">Password:</p>
                     <div className="bg-[#1e2126] border border-[#32363e] rounded-lg p-3">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-white text-xs font-mono break-all flex-1" title={env.code}>
@@ -662,7 +662,7 @@ export default function RedEnvelopePage() {
                           onClick={() => copyToClipboard(env.code)}
                           className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-r from-[#a625fc] to-[#f89318] rounded text-white text-xs font-medium hover:opacity-90 transition-opacity"
                         >
-                          {copySuccess ? "已复制" : "Copy"}
+                          {copySuccess ? "Copied" : "Copy"}
                         </button>
                       </div>
                     </div>

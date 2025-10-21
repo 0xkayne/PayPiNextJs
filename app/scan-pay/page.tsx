@@ -1,14 +1,12 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRequireAuth } from "../contexts/AuthContext";
 
 export default function ScanPayPage() {
   const { isChecking, isAuthenticated, isPiBrowser } = useRequireAuth();
   const [amount, setAmount] = useState("1");
-  const [yourAddress, setYourAddress] = useState("");
-  const [receivingAddress, setReceivingAddress] = useState("");
+  const [receivingMerchantUid, setReceivingMerchantUid] = useState("");
   const [piPerUsd, setPiPerUsd] = useState<number>(100); // 1 USD ≈ X Pi
   const [usdPerPi, setUsdPerPi] = useState<number | null>(null); // 1 Pi ≈ X USD
   const [loadingRate, setLoadingRate] = useState<boolean>(false);
@@ -19,11 +17,7 @@ export default function ScanPayPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const detectTimerRef = useRef<number | null>(null);
 
-  // Pi 地址正则（56 位大写字母或数字）
-  const PI_ADDR_RE = useMemo(() => /^[A-Z0-9]{56}$/, []);
-  const yourValid = PI_ADDR_RE.test(yourAddress.trim());
-  const receivingValid = PI_ADDR_RE.test(receivingAddress.trim());
-  const canContinue = yourValid && receivingValid;
+  const canContinue = receivingMerchantUid.length > 0;
 
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string>("");
@@ -87,7 +81,7 @@ export default function ScanPayPage() {
 
   async function sendPayment() {
     setMsg("");
-    if (!canContinue) { setMsg("Invalid address"); return; }
+    if (!canContinue) { setMsg("请先扫描商家二维码"); return; }
     if (!canPayAmount) { setMsg("Invalid amount"); return; }
 
     const w = window as unknown as {
@@ -107,17 +101,28 @@ export default function ScanPayPage() {
 
     getAccessToken(); // 验证已登录
 
-    const amountPi = Number(piAmount.toFixed(6));
-    const memo = `ScanPay to ${receivingAddress}`;
+    // 计算实际支付金额（扣除 0.01 Pi）
+    const actualAmount = Number((piAmount - 0.01).toFixed(6));
+    if (actualAmount <= 0) {
+      setMsg("Payment amount must be greater than 0.01 Pi");
+      return;
+    }
+
+    const memo = `Paying to merchant ${actualAmount.toFixed(6)} Pi`;
 
     setSubmitting(true);
     try {
       await new Promise<void>((resolve, reject) => {
         w.Pi!.createPayment(
           {
-            amount: amountPi,
+            amount: actualAmount,
             memo,
-            metadata: { flow: "scan-pay", receivingAddress: receivingAddress.trim(), yourAddress: yourAddress.trim(), usdAmount },
+            metadata: {
+              flow: "merchant-payment",
+              merchantUid: receivingMerchantUid,
+              originalAmount: piAmount,
+              usdAmount
+            },
           },
           {
             onReadyForServerApproval: async (paymentId) => {
@@ -129,15 +134,16 @@ export default function ScanPayPage() {
                 });
                 if (!r.ok) throw new Error("Server approval failed");
               } catch (e) {
-                reject(e instanceof Error ? e : new Error("服务器审批失败"));
+                reject(e instanceof Error ? e : new Error("Failed to approve payment"));
               }
             },
             onReadyForServerCompletion: async (paymentId, txid) => {
               try {
-                const r = await fetch("/api/v1/payments/complete", {
+                // 调用商家收款完成接口
+                const r = await fetch("/api/v1/payments/merchant-payment", {
                   method: "POST",
                   headers: { "content-type": "application/json" },
-                  body: JSON.stringify({ paymentId, txid }),
+                  body: JSON.stringify({ paymentId, txid, merchantUid: receivingMerchantUid }),
                 });
                 if (!r.ok) throw new Error("Server completion failed");
                 resolve();
@@ -150,7 +156,7 @@ export default function ScanPayPage() {
           }
         );
       });
-      setMsg("Payment completed");
+      setMsg("Payment completed successfully!");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Payment failed, please try again");
     } finally {
@@ -229,13 +235,26 @@ export default function ScanPayPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ qrData }),
       });
-      const json = await res.json().catch(() => null) as { data?: { piAddress?: string; startPi?: number }; error?: string } | null;
+      const json = await res.json().catch(() => null) as { data?: { merchantUid?: string; piAddress?: string; version?: number }; error?: string } | null;
       if (!res.ok || !json || json.error) {
         setScanError(json?.error || "QR code parsing failed");
         return;
       }
-      const addr = json?.data?.piAddress;
-      if (addr) setReceivingAddress(addr);
+
+      // 支持新版本（merchantUid）和旧版本（piAddress）
+      const merchantUid = json?.data?.merchantUid;
+      const piAddress = json?.data?.piAddress;
+
+      if (merchantUid) {
+        setReceivingMerchantUid(merchantUid);
+        setMsg(`Scanned merchant: ${merchantUid.slice(0, 8)}...`);
+      } else if (piAddress) {
+        // 兼容旧版二维码
+        setReceivingMerchantUid(piAddress);
+        setMsg(`Scanned merchant (old version): ${piAddress.slice(0, 8)}...`);
+      } else {
+        setScanError("Cannot parse merchant information");
+      }
     } catch {
       setScanError("Network error, QR code parsing failed");
     }
@@ -320,53 +339,38 @@ export default function ScanPayPage() {
                   : `(1 USD ≈ ${(usdPerPi && usdPerPi > 0 ? (1 / usdPerPi) : piPerUsd).toFixed(4)} Pi)`
             }</span>
           </div>
+          <div className="mt-2 text-sm text-yellow-400">
+            Actual payment: {Math.max(0, piAmount - 0.01).toFixed(6)} Pi (0.01 Pi processing fee deducted)
+          </div>
         </div>
 
         {/* 分割线 */}
         <div className="w-full h-[1px] bg-[#35363c] mb-8" />
 
-        {/* 地址输入区域 */}
-        <div className="flex flex-col gap-2.5 mb-12">
-          {/* Your Pi Address */}
+        {/* 商家信息显示区域 */}
+        <div className="mb-12">
           <div className="relative bg-[#090b0c] border-2 border-[#35363c] rounded-lg p-5 flex items-center justify-between">
-            <div className="w-12 h-12 flex items-center justify-center">
-              <Image src="/Pi symbol.svg" alt="Pi" width={40} height={40} />
+            <div className="flex-1">
+              {receivingMerchantUid ? (
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-[#8d8f99]">Merchant UID</div>
+                  <div className="text-base font-medium text-white break-all">
+                    {receivingMerchantUid.slice(0, 12)}...{receivingMerchantUid.slice(-8)}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xl font-medium text-[#7d7f88]">
+                  Scan Merchant QR Code
+                </div>
+              )}
             </div>
-            <input
-              type="text"
-              value={yourAddress}
-              onChange={(e) => setYourAddress(e.target.value)}
-              placeholder="Enter Your Pi Address"
-              className="flex-1 bg-transparent text-xl font-medium text-[#7d7f88] placeholder:text-[#7d7f88] outline-none mx-4"
-            />
-
-          </div>
-          {!yourValid && (
-            <div className="mt-1 text-xs text-red-400">Please enter a valid Pi address.</div>
-          )}
-
-          {/* 分隔符 */}
-          <div className="w-[1px] h-5 bg-[#35363c] mx-auto" />
-
-          {/* Receiving Address */}
-          <div className="relative bg-[#090b0c] border-2 border-[#35363c] rounded-lg p-5 flex items-center justify-between">
-            <div className="w-12 h-12 flex items-center justify-center">
-              <Image src="/Pi symbol.svg" alt="Pi" width={40} height={40} />
-            </div>
-            <input
-              type="text"
-              value={receivingAddress}
-              onChange={(e) => setReceivingAddress(e.target.value)}
-              placeholder="Enter Receiving Address"
-              className="flex-1 bg-transparent text-xl font-medium text-[#7d7f88] placeholder:text-[#7d7f88] outline-none mx-4"
-            />
             <button
-              className="w-8 h-8 flex items-center justify-center"
+              className="w-12 h-12 flex items-center justify-center ml-4"
               onClick={() => { setScanError(null); setScanOpen(true); }}
               aria-label="Scan QR"
               title="Scan QR"
             >
-              <svg className="w-6 h-6 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-8 h-8 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                 <path d="M17 3h2a2 2 0 0 1 2 2v2" />
                 <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
@@ -375,22 +379,19 @@ export default function ScanPayPage() {
               </svg>
             </button>
           </div>
-          {!receivingValid && (
-            <div className="mt-1 text-xs text-red-400">Please enter a valid Pi address.</div>
-          )}
         </div>
 
         {/* 按钮区域 */}
         <div className="flex flex-col gap-5">
           <button
-            disabled={!canContinue || !canPayAmount || submitting}
+            disabled={!canContinue || !canPayAmount || submitting || piAmount <= 0.01}
             onClick={sendPayment}
             className="w-full h-16 bg-[#32363e] border border-[#a625fc] rounded-full text-white text-xl font-medium hover:bg-[#3a3f49] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Processing..." : "Continue to Payment"}
           </button>
           <Link
-            href="/history"
+            href="/merchant-payment-history"
             className="w-full h-16 bg-gradient-to-r from-[#a625fc] to-[#f89318] rounded-full text-white text-xl font-medium flex items-center justify-center hover:opacity-90 transition-opacity"
           >
             Payment History
@@ -423,4 +424,3 @@ export default function ScanPayPage() {
     </div>
   );
 }
-

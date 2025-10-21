@@ -21,6 +21,8 @@ model PiUser {
   batchTasks    BatchTransferTask[]
   redEnvelopes  RedEnvelope[] @relation("RedEnvelopeCreator")
   claimedEnvelopes RedEnvelope[] @relation("RedEnvelopeClaimer")
+  merchantPayments MerchantPayment[]
+  dividendPayments MerchantDividendPayment[]
 }
 
 model Session {
@@ -33,14 +35,25 @@ model Session {
 }
 
 model MerchantPaycode {
-  id           String   @id @default(uuid())
-  ownerUserId  String   @unique
-  owner        PiUser   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  piAddress    String   @db.VarChar(56)
-  startPi      Decimal  @db.Decimal(18, 6)
-  payloadJson  String
-  qrPngDataUrl String
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  ownerUserId       String   @unique
+  owner             PiUser   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  merchantUid       String   @default("") @db.VarChar(100)  // 商家的 Pi uid
+  dividendPool      Decimal  @default(0) @db.Decimal(18, 6) // 当前分红池
+  initialAmount     Decimal  @default(0) @db.Decimal(18, 6) // 初始注册金额
+  registerPaymentId String?  // 注册时的 U2A 支付 ID
+  registerTxid      String?  // 注册时的交易 ID
+  
+  // 保留旧字段以兼容，标记为可选
+  piAddress         String?  @db.VarChar(56)
+  startPi           Decimal? @db.Decimal(18, 6)
+  
+  payloadJson       String
+  qrPngDataUrl      String
+  createdAt         DateTime @default(now())
+  
+  payments          MerchantPayment[]
+  dividendDistributions MerchantDividendDistribution[]
 }
 
 // 批量转账任务记录
@@ -124,6 +137,88 @@ model RedEnvelope {
   @@index([creatorUserId])
   @@index([code])
   @@index([status])
+}
+
+// 商家收款记录表
+model MerchantPayment {
+  id                String   @id @default(uuid())
+  merchantPaycodeId String
+  merchantPaycode   MerchantPaycode @relation(fields: [merchantPaycodeId], references: [id], onDelete: Cascade)
+  
+  // 付款人信息
+  payerUserId       String?
+  payer             PiUser?  @relation(fields: [payerUserId], references: [id], onDelete: SetNull)
+  payerUid          String   // Pi uid
+  
+  // 金额信息
+  totalAmount       Decimal  @db.Decimal(18, 6)  // 用户支付的总额（已扣 0.01）
+  merchantAmount    Decimal  @db.Decimal(18, 6)  // 商家收到的 95%
+  dividendAmount    Decimal  @db.Decimal(18, 6)  // 进入分红池的 5%
+  
+  // U2A 支付信息（用户转给 App）
+  u2aPaymentId      String
+  u2aTxid           String?
+  
+  // A2U 支付信息（App 转给商家）
+  a2uPaymentId      String?  @unique
+  a2uTxid           String?
+  a2uStatus         String   @default("pending")  // pending, created, submitted, completed, failed
+  a2uErrorMessage   String?  @db.Text
+  
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+  
+  @@index([merchantPaycodeId])
+  @@index([payerUserId])
+  @@index([payerUid])
+}
+
+// 商家分红分配记录表
+model MerchantDividendDistribution {
+  id                String   @id @default(uuid())
+  merchantPaycodeId String
+  merchantPaycode   MerchantPaycode @relation(fields: [merchantPaycodeId], references: [id], onDelete: Cascade)
+  
+  totalDividend     Decimal  @db.Decimal(18, 6)  // 本次分红总额
+  recipientCount    Int                           // 收益人数量
+  status            String   @default("pending")  // pending, processing, completed, partial_completed, failed
+  
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+  
+  payments          MerchantDividendPayment[]
+  
+  @@index([merchantPaycodeId])
+}
+
+// 单个用户的商家分红记录表
+model MerchantDividendPayment {
+  id                String   @id @default(uuid())
+  distributionId    String
+  distribution      MerchantDividendDistribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+  
+  recipientUserId   String?
+  recipient         PiUser?  @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+  recipientUid      String
+  
+  // 该用户的累计付款金额和占比
+  totalPaidAmount   Decimal  @db.Decimal(18, 6)
+  percentage        Decimal  @db.Decimal(5, 4)  // 占比（0-1）
+  
+  // 本次分红金额
+  dividendAmount    Decimal  @db.Decimal(18, 6)
+  
+  // A2U 支付信息
+  paymentId         String?  @unique
+  txid              String?
+  status            String   @default("created")  // created, submitted, completed, failed
+  errorMessage      String?  @db.Text
+  
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+  
+  @@index([distributionId])
+  @@index([recipientUid])
 }
 
 

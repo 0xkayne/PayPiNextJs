@@ -11,10 +11,14 @@ export async function GET(req: Request) {
   return json({
     data: {
       id: rec.id,
-      piAddress: rec.piAddress,
-      startPi: Number(rec.startPi),
+      merchantUid: rec.merchantUid,
+      dividendPool: Number(rec.dividendPool),
+      initialAmount: Number(rec.initialAmount),
       payload: JSON.parse(rec.payloadJson),
       qrPngDataUrl: rec.qrPngDataUrl,
+      // 兼容旧字段
+      piAddress: rec.piAddress,
+      startPi: rec.startPi ? Number(rec.startPi) : undefined,
     },
   });
 }
