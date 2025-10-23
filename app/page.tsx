@@ -21,17 +21,6 @@ export default function Home() {
     }
   };
 
-  // 获取环境状态显示文本
-  const getEnvironmentStatus = () => {
-    if (!isPiBrowser) {
-      return "Please open in Pi Browser";
-    }
-    if (piReady) {
-      return isAuthenticated ? `Logged in: ${user?.username}` : "Not logged in";
-    }
-    return "Pi SDK loading...";
-  };
-
   // 渲染优雅的状态显示
   const renderStatusDisplay = () => {
     if (!isPiBrowser) {
@@ -202,7 +191,7 @@ export default function Home() {
           {/* Features - 紧凑优化 */}
           <div className="flex flex-col items-center gap-3 sm:gap-3.5">
             {/* 1. One-to-many Transfer */}
-            <Link href="/oneton" className="w-full max-w-sm rounded-xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-3.5 sm:p-4 flex items-center shadow-[0_6px_20px_rgba(166,37,252,0.25)]">
+            <Link href="/oneton" className="w-full rounded-xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-3.5 sm:p-4 flex items-center shadow-[0_6px_20px_rgba(166,37,252,0.25)]" style={{ maxWidth: '300px' }}>
               <span className="mr-3 inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-white/15 flex-shrink-0">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 7h11" />
@@ -216,7 +205,7 @@ export default function Home() {
             </Link>
 
             {/* 2. Red Envelope */}
-            <Link href="/red-envelope" className="w-full max-w-sm rounded-xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-3.5 sm:p-4 flex items-center shadow-[0_6px_20px_rgba(166,37,252,0.25)]">
+            <Link href="/red-envelope" className="w-full rounded-xl bg-[#8b22f4] hover:bg-[#a625fc] active:scale-[0.98] transition-all p-3.5 sm:p-4 flex items-center shadow-[0_6px_20px_rgba(166,37,252,0.25)]" style={{ maxWidth: '300px' }}>
               <span className="mr-3 inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-white/15 flex-shrink-0">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="4" y="3" width="16" height="18" rx="2" />
