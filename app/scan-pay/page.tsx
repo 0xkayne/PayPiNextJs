@@ -287,136 +287,265 @@ export default function ScanPayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#090b0c] text-white">
-      <div className="mx-auto max-w-md px-6 py-8">
-        {/* 顶部选项卡 */}
-        <div className="relative flex items-center justify-center mb-14">
-          <Link href="/" className="absolute left-0 inline-flex h-8 w-8 items-center justify-center rounded hover:bg-white/10">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <div className="flex items-center gap-7">
-            <Link
-              href="/merchant-code"
-              className="text-xl font-medium transition-colors text-white/60 hover:text-white"
-            >
-              Merchant
-            </Link>
-            <button
-              className="text-xl font-medium transition-colors relative text-[#a625fc]"
-            >
-              Payment
-              <div className="absolute -bottom-1 left-0 right-0 h-[1px] bg-[#a625fc]" />
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#090b0c] text-white flex flex-col">
+      <div className="mx-auto max-w-md w-full px-4 py-5 flex-1 flex flex-col">
+        {/* 顶部选项卡 - 精致化 */}
+        <div className="relative backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 rounded-2xl p-3.5 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] mb-5">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#a625fc]/20 via-transparent to-[#f89318]/20 opacity-50 pointer-events-none" />
 
-        {/* 金额区域 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-5">
-            <input
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-              className="bg-transparent text-6xl font-medium text-white outline-none w-auto min-w-[80px] max-w-[200px]"
-              placeholder="1"
-            />
-            <span className="text-6xl font-medium text-[#a625fc]">|</span>
-            <span className="text-6xl font-medium text-[#7d7f88]">USD</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="w-6 h-6 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M7 10l5 5 5-5" />
-              <path d="M7 14l5-5 5 5" />
-            </svg>
-            <span className="text-xl font-medium text-[#a625fc]">{piAmount.toFixed(4)} Pi</span>
-            <span className="ml-2 text-xs text-[#7d7f88]">{
-              loadingRate
-                ? "(Exchange rate loading...)"
-                : rateError
-                  ? `(${rateError})`
-                  : `(1 USD ≈ ${(usdPerPi && usdPerPi > 0 ? (1 / usdPerPi) : piPerUsd).toFixed(4)} Pi)`
-            }</span>
-          </div>
-          <div className="mt-2 text-sm text-yellow-400">
-            Actual payment: {Math.max(0, piAmount - 0.01).toFixed(6)} Pi (0.01 Pi processing fee deducted)
-          </div>
-        </div>
-
-        {/* 分割线 */}
-        <div className="w-full h-[1px] bg-[#35363c] mb-8" />
-
-        {/* 商家信息显示区域 */}
-        <div className="mb-12">
-          <div className="relative bg-[#090b0c] border-2 border-[#35363c] rounded-lg p-5 flex items-center justify-between">
-            <div className="flex-1">
-              {receivingMerchantUid ? (
-                <div className="flex flex-col gap-1">
-                  <div className="text-sm text-[#8d8f99]">Merchant UID</div>
-                  <div className="text-base font-medium text-white break-all">
-                    {receivingMerchantUid.slice(0, 12)}...{receivingMerchantUid.slice(-8)}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-xl font-medium text-[#7d7f88]">
-                  Scan Merchant QR Code
-                </div>
-              )}
-            </div>
-            <button
-              className="w-12 h-12 flex items-center justify-center ml-4"
-              onClick={() => { setScanError(null); setScanOpen(true); }}
-              aria-label="Scan QR"
-              title="Scan QR"
-            >
-              <svg className="w-8 h-8 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                <rect x="8" y="8" width="8" height="8" rx="1" />
+          <div className="relative flex items-center justify-center">
+            <Link href="/" className="absolute left-0 inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-white/10 transition-all active:scale-95">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
               </svg>
-            </button>
+            </Link>
+            <div className="flex items-center gap-5">
+              <Link
+                href="/merchant-code"
+                className="text-base font-semibold transition-colors text-white/60 hover:text-white"
+              >
+                Merchant
+              </Link>
+              <button className="relative text-base font-bold text-[#a625fc]">
+                Payment
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#a625fc] rounded-full" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 按钮区域 */}
-        <div className="flex flex-col gap-5">
-          <button
-            disabled={!canContinue || !canPayAmount || submitting || piAmount <= 0.01}
-            onClick={sendPayment}
-            className="w-full h-16 bg-[#32363e] border border-[#a625fc] rounded-full text-white text-xl font-medium hover:bg-[#3a3f49] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Processing..." : "Continue to Payment"}
-          </button>
-          <Link
-            href="/merchant-payment-history"
-            className="w-full h-16 bg-gradient-to-r from-[#a625fc] to-[#f89318] rounded-full text-white text-xl font-medium flex items-center justify-center hover:opacity-90 transition-opacity"
-          >
-            Payment History
-          </Link>
+        {/* 内容区域 - 垂直居中 + 收窄 */}
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="mx-auto w-full" style={{ maxWidth: '340px' }}>
+            {/* 金额区域 - 优化尺寸 */}
+            <div className="mb-5">
+              <div className="flex items-center justify-center gap-2.5 mb-4">
+                <input
+                  type="text"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                  className="bg-transparent text-5xl font-bold text-white outline-none w-auto min-w-[80px] max-w-[180px] text-center"
+                  placeholder="1"
+                />
+                <span className="text-5xl font-bold text-[#a625fc]">|</span>
+                <span className="text-5xl font-bold text-[#7d7f88]">USD</span>
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mb-2">
+                <svg className="w-5 h-5 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 10l5 5 5-5" />
+                  <path d="M7 14l5-5 5 5" />
+                </svg>
+                <span className="text-lg font-bold text-[#a625fc]">{piAmount.toFixed(4)} Pi</span>
+              </div>
+              <div className="text-xs text-center text-white/70 font-bold mb-2">
+                {loadingRate
+                  ? "(Exchange rate loading...)"
+                  : rateError
+                    ? `(${rateError})`
+                    : `(1 USD ≈ ${(usdPerPi && usdPerPi > 0 ? (1 / usdPerPi) : piPerUsd).toFixed(4)} Pi)`}
+              </div>
+              <div className="text-xs text-center text-yellow-400 font-semibold">
+                Actual payment: {Math.max(0, piAmount - 0.01).toFixed(6)} Pi (0.01 Pi fee)
+              </div>
+            </div>
+
+            {/* 分割线 */}
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-5" />
+
+            {/* 商家信息显示区域 - 精致化 */}
+            <div className="mb-6">
+              <div className="relative bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between backdrop-blur-sm shadow-lg overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#a625fc]/5 to-[#f89318]/5 opacity-50 pointer-events-none" />
+
+                <div className="relative flex-1 min-w-0">
+                  {receivingMerchantUid ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="text-xs text-white/70 font-bold uppercase tracking-wide">Merchant UID</div>
+                      <div className="text-sm font-semibold text-white break-all">
+                        {receivingMerchantUid.slice(0, 12)}...{receivingMerchantUid.slice(-8)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-base font-semibold text-white/60">
+                      Scan Merchant QR Code
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="relative w-10 h-10 flex items-center justify-center ml-3 rounded-xl bg-gradient-to-br from-[#a625fc]/20 to-[#f89318]/20 hover:from-[#a625fc]/30 hover:to-[#f89318]/30 transition-all active:scale-95"
+                  onClick={() => { setScanError(null); setScanOpen(true); }}
+                  aria-label="Scan QR"
+                  title="Scan QR"
+                >
+                  <svg className="w-6 h-6 text-[#a625fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                    <rect x="8" y="8" width="8" height="8" rx="1" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* 按钮区域 - 紧凑化 */}
+            <div className="flex flex-col gap-3">
+              <button
+                disabled={!canContinue || !canPayAmount || submitting || piAmount <= 0.01}
+                onClick={sendPayment}
+                className="group relative w-full h-12 rounded-xl overflow-hidden transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                <div className="absolute inset-0 bg-[#32363e] group-hover:bg-[#3a3f49] transition-colors" />
+                <div className="absolute inset-0 border border-[#a625fc]" />
+                <span className="relative text-white text-base font-semibold">
+                  {submitting ? "Processing..." : "Continue to Payment"}
+                </span>
+              </button>
+
+              <Link
+                href="/merchant-payment-history"
+                className="group relative w-full h-12 rounded-xl overflow-hidden transition-all active:scale-[0.98] shadow-lg flex items-center justify-center"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#a625fc] to-[#f89318] opacity-100 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative text-white text-base font-semibold flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Payment History
+                </span>
+              </Link>
+            </div>
+
+            {/* 消息提示 - 精致化 */}
+            {msg && (
+              <div className="mt-3 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 backdrop-blur-sm">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-white/90 flex-1 font-medium">{msg}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        {msg && <div className="mt-2 text-sm opacity-80">{msg}</div>}
 
       </div>
-      {/* 扫码弹层 */}
+
+      {/* 扫码弹层 - 精美动画效果 */}
       {scanOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-white/70">Align the QR code to scan</div>
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.95) 100%)',
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <style jsx>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes scaleIn {
+              from {
+                opacity: 0;
+                transform: scale(0.3);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            @keyframes scanLine {
+              0% { transform: translateY(-100%); }
+              100% { transform: translateY(100%); }
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}</style>
+
+          <div
+            className="w-full max-w-sm"
+            style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+          >
+            {/* 顶部控制栏 */}
+            <div className="flex items-center justify-between mb-4 px-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#a625fc] animate-pulse"></div>
+                <span className="text-sm font-semibold text-white">Scanning QR Code</span>
+              </div>
               <button
-                className="text-sm px-3 py-1 rounded border border-white/30 text-white/80 hover:bg-white/10"
+                className="group relative px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 transition-all active:scale-95"
                 onClick={stopScan}
-              >Close</button>
+              >
+                <span className="text-sm font-semibold text-white">Close</span>
+              </button>
             </div>
-            <div className="relative rounded-lg overflow-hidden border border-white/20">
-              <video ref={videoRef} autoPlay playsInline muted className="block w-full aspect-[3/4] object-cover bg-black" />
-              <div className="pointer-events-none absolute inset-0 border-2 border-[#a625fc]/70 rounded" />
+
+            {/* 扫描框容器 */}
+            <div className="relative">
+              {/* 发光边框效果 */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#a625fc] via-[#d66675] to-[#f89318] rounded-3xl blur-lg opacity-60"></div>
+
+              {/* 主扫描框 */}
+              <div className="relative rounded-2xl overflow-hidden border-2 border-[#a625fc]/50 shadow-2xl">
+                {/* 视频流 */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="block w-full aspect-[3/4] object-cover bg-black"
+                />
+
+                {/* 扫描框叠加层 */}
+                <div className="pointer-events-none absolute inset-0">
+                  {/* 四角扫描框 */}
+                  <div className="absolute inset-0 flex items-center justify-center p-8">
+                    <div className="relative w-full max-w-[240px] aspect-square">
+                      {/* 左上角 */}
+                      <div className="absolute top-0 left-0 w-12 h-12 border-l-4 border-t-4 border-[#a625fc] rounded-tl-xl" style={{ animation: 'pulse 2s ease-in-out infinite' }}></div>
+                      {/* 右上角 */}
+                      <div className="absolute top-0 right-0 w-12 h-12 border-r-4 border-t-4 border-[#f89318] rounded-tr-xl" style={{ animation: 'pulse 2s ease-in-out infinite 0.5s' }}></div>
+                      {/* 左下角 */}
+                      <div className="absolute bottom-0 left-0 w-12 h-12 border-l-4 border-b-4 border-[#f89318] rounded-bl-xl" style={{ animation: 'pulse 2s ease-in-out infinite 1s' }}></div>
+                      {/* 右下角 */}
+                      <div className="absolute bottom-0 right-0 w-12 h-12 border-r-4 border-b-4 border-[#a625fc] rounded-br-xl" style={{ animation: 'pulse 2s ease-in-out infinite 1.5s' }}></div>
+
+                      {/* 扫描线 */}
+                      <div
+                        className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#a625fc] to-transparent opacity-75"
+                        style={{ animation: 'scanLine 2s ease-in-out infinite' }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* 中心提示文字 */}
+                  <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+                    <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                      <p className="text-xs font-semibold text-white">Align QR code within frame</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* 错误提示 */}
             {scanError && (
-              <div className="mt-3 text-xs text-red-300">{scanError}</div>
+              <div className="mt-4 relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl blur opacity-30"></div>
+                <div className="relative bg-red-900/30 border border-red-500/30 rounded-xl p-3 backdrop-blur-sm">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 mt-0.5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-xs text-red-300 font-semibold flex-1">{scanError}</span>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
